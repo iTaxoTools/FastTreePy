@@ -11,6 +11,7 @@ params = Group(
             children=[
                 Field('gamma', label='Gamma', list=[1, 2, 3], value=2),
                 Field('delta', label='Delta', type=int, value=1),
-                Field('epsilon', label='Epsilon', range=(1, 10), value=1),
+                Field('epsilon', label='Epsilon',
+                    type=int, range=(1, 10), value=1),
             ])
     ])

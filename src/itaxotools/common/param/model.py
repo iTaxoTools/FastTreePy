@@ -28,12 +28,13 @@ from . import Field, Group
 
 class Model(QAbstractItemModel):
 
-    headers = ['key', 'label', 'value', 'doc',
+    columns = ['key', 'label', 'value', 'doc',
                'list', 'range', 'type', 'default']
 
     def __init__(self, group, parent=None):
         super().__init__(parent)
         self.rootItem = group
+        self.headers = list(self.columns)
 
     def index(self, row, column, parent):
         if not self.hasIndex(row, column, parent):
@@ -72,7 +73,7 @@ class Model(QAbstractItemModel):
         return 0
 
     def columnCount(self, parent):
-        return len(self.headers)
+        return len(self.columns)
 
     def data(self, index, role):
         if not index.isValid():
@@ -80,7 +81,7 @@ class Model(QAbstractItemModel):
         item = index.internalPointer()
         if role == Qt.ItemDataRole.DisplayRole:
             try:
-                attr = self.headers[index.column()]
+                attr = self.columns[index.column()]
                 return str(getattr(item, attr))
             except AttributeError:
                 return None
@@ -89,7 +90,8 @@ class Model(QAbstractItemModel):
             return item.doc
         return None
 
-    def setData(self, index, value, role):
+    def setData(self, index, value,
+            role=Qt.ItemDataRole.EditRole):
         if index.isValid() and role == Qt.ItemDataRole.EditRole:
             item = index.internalPointer()
             item.value = item.type(value)
@@ -100,10 +102,32 @@ class Model(QAbstractItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemFlag.NoItemFlags
-        return super().flags(index) | Qt.ItemFlag.ItemIsEditable
+        item = index.internalPointer()
+        flag = Qt.ItemFlag.NoItemFlags
+        if (isinstance(item, Field) and
+                self.columns[index.column()] == 'value'):
+            flag = Qt.ItemFlag.ItemIsEditable
+        return super().flags(index) | flag
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section, orientation,
+            role=Qt.ItemDataRole.DisplayRole):
         if (orientation == Qt.Orientation.Horizontal and
                 role == Qt.ItemDataRole.DisplayRole):
             return self.headers[section]
         return None
+
+    def setHeaderData(self, section, orientation, value,
+            role=Qt.ItemDataRole.DisplayRole):
+        if (orientation == Qt.Orientation.Horizontal and
+                role == Qt.ItemDataRole.DisplayRole):
+            self.headers[section] = value
+            self.headerDataChanged.emit(orientation, section, section)
+            return True
+        return False
+
+    def paramIndex(self, param):
+        if param._parent is None:
+            return QModelIndex()
+        keys = list(param._parent._children.keys())
+        row = keys.index(param.key)
+        return self.createIndex(row, 0, param)
