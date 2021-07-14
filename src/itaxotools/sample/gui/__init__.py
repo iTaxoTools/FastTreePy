@@ -11,6 +11,7 @@ from .main import Main
 def main():
     """Entry point"""
     app = QtWidgets.QApplication(sys.argv)
+    app.setStyle('Fusion')
     main = Main()
     main.show()
     sys.exit(app.exec_())

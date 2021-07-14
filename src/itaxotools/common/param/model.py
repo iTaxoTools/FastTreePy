@@ -28,6 +28,7 @@ from . import Field, Group
 
 class Model(QAbstractItemModel):
 
+    DataRole = Qt.ItemDataRole.UserRole
     columns = ['key', 'label', 'value', 'doc',
                'list', 'range', 'type', 'default']
 
@@ -36,7 +37,7 @@ class Model(QAbstractItemModel):
         self.rootItem = group
         self.headers = list(self.columns)
 
-    def index(self, row, column, parent):
+    def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
         parentItem = self.rootItem
@@ -75,7 +76,8 @@ class Model(QAbstractItemModel):
     def columnCount(self, parent):
         return len(self.columns)
 
-    def data(self, index, role):
+    def data(self, index,
+            role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return None
         item = index.internalPointer()
@@ -85,19 +87,26 @@ class Model(QAbstractItemModel):
                 return str(getattr(item, attr))
             except AttributeError:
                 return None
-        if (role == Qt.ItemDataRole.ToolTipRole or
+        elif (role == Qt.ItemDataRole.ToolTipRole or
                 role == Qt.ItemDataRole.WhatsThisRole):
             return item.doc
+        elif role == self.DataRole:
+            return item
         return None
 
     def setData(self, index, value,
             role=Qt.ItemDataRole.EditRole):
-        if index.isValid() and role == Qt.ItemDataRole.EditRole:
-            item = index.internalPointer()
-            item.value = item.type(value)
-            self.dataChanged.emit(index, index)
-            return True
-        return False
+        try:
+            if index.isValid() and role == Qt.ItemDataRole.EditRole:
+                item = index.internalPointer()
+                item.value = item.type(value)
+                roles = [Qt.ItemDataRole.DisplayRole, self.DataRole]
+                self.dataChanged.emit(index, index, roles)
+                return True
+            return False
+        except (ValueError, TypeError) as e:
+            self.setDataError = str(e)
+            return False
 
     def flags(self, index):
         if not index.isValid():

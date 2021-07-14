@@ -14,6 +14,7 @@ from itaxotools.common import resources
 from itaxotools.sample import core
 
 from itaxotools.common.param.model import Model
+from itaxotools.common.param.view import View
 from itaxotools.common.param import Field
 from ..params import params
 
@@ -35,7 +36,7 @@ class Main(QtWidgets.QDialog):
         path = get_resource('logos/png/itaxotools-micrologo.png')
         pixmap = QtGui.QPixmap(path)
         label = QtWidgets.QLabel()
-        label.setPixmap(pixmap.scaled(200, 100, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding))
+        label.setPixmap(pixmap.scaled(100, 50, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding))
 
         self.params = params
 
@@ -46,19 +47,18 @@ class Main(QtWidgets.QDialog):
         view2.setModel(model)
         # view2.setRootIndex(model.createIndex(0,0,self.params.general))
         view2.setRootIndex(model.paramIndex(self.params.general))
-        print(model.paramIndex(self.params.general))
-        print(model.paramIndex(self.params.general.gamma))
-        print(model.paramIndex(self.params.general.delta))
         i = model.paramIndex(self.params.general.delta)
         model.setData(i, 42)
 
+        view3 = View(model)
+
+        view4 = View(model)
+        view4.setRootIndex(model.paramIndex(params.general))
+
+        view5 = View(model)
+        view5.setRootIndex(model.paramIndex(params.general.delta))
+
         self.model = model
-        self.model.dataChanged.connect(
-            lambda l, r, s: print(l, r, s))
-        self.model.layoutChanged.connect(
-            lambda ps, hint: print(ps, hint))
-        self.model.rowsInserted.connect(
-            lambda p, f, l: print(p, f, l))
         self.bar = 'bar'
         button_foo = QtWidgets.QPushButton('Foo')
         button_foo.clicked.connect(self.foo)
@@ -73,6 +73,9 @@ class Main(QtWidgets.QDialog):
         layout.addWidget(label, 0)
         layout.addWidget(view, 0)
         layout.addWidget(view2, 0)
+        layout.addWidget(view3, 0)
+        layout.addWidget(view4, 0)
+        layout.addWidget(view5, 0)
         layout.addWidget(button_foo, 0)
         layout.addWidget(button_config, 0)
         layout.addWidget(button_pyr8s, 0)
@@ -81,6 +84,7 @@ class Main(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def foo(self):
+        self.params.general.gamme = 51
         self.params.add(Field('baz'))
         self.params.general.add(Field('bazar'))
         self.bar += 'bar'
