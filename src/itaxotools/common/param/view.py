@@ -21,15 +21,63 @@
 Parameter view for PySide6
 """
 
-from PySide6.QtCore import Qt, QAbstractItemModel, QModelIndex, QSize, Signal
+from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QRect
 from PySide6.QtWidgets import (
-    QWidget, QFrame, QLabel, QLineEdit, QCheckBox, QScrollArea,
-    QMessageBox, QSizePolicy, QComboBox, QGroupBox, QVBoxLayout,
-    QHBoxLayout, QLayout)
-from PySide6.QtGui import QIntValidator, QDoubleValidator
+    QFrame, QLabel, QLineEdit, QCheckBox, QScrollArea, QMessageBox,
+    QComboBox, QGroupBox, QVBoxLayout, QHBoxLayout, QLayout)
+from PySide6.QtGui import QValidator, QIntValidator, QDoubleValidator
 
-from . import Field, Group
-from .model import Model
+from . import Field
+
+
+class FieldLayout(QLayout):
+    """Last widget added has the same width for all instances"""
+    def __init__(self, label, widget, parent=None):
+        super().__init__(parent)
+        self.itemList = []
+        self.www = 100
+        self.addWidget(label)
+        self.addWidget(widget)
+
+    def addItem(self, item):
+        self.itemList.append(item)
+
+    def itemAt(self, index):
+        try:
+            return self.itemList[index]
+        except IndexError:
+            return None
+
+    def takeAt(self, index):
+        return self.itemList.pop(index)
+
+    def count(self):
+        return len(self.itemList)
+
+    def sizeHint(self):
+        w, h = 0, 0
+        for item in self.itemList:
+            w += item.sizeHint().width()
+            h = max(h, item.sizeHint().height())
+        return QSize(w, h)
+
+    def minimumSize(self):
+        if self.itemList:
+            return self.itemList[-1].sizeHint()
+        else:
+            return QSize(0, 0)
+
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        w = rect.width()
+        if w >= self.www:
+            div = rect.right() - self.www
+            rl = QRect(rect)
+            rl.setRight(div)
+            self.itemList[0].setGeometry(rl)
+            rw = QRect(rect)
+            rw.setLeft(div)
+            self.itemList[-1].setGeometry(rw)
 
 
 class FieldWidget(QFrame):
@@ -60,7 +108,7 @@ class BoolWidget(FieldWidget):
         self.checkbox.stateChanged.connect(self.onDataChange)
         self.checkbox.setToolTip(self._field.doc)
         self.refreshData()
-        layout = FieldLayout()
+        layout = QHBoxLayout()
         layout.addWidget(self.checkbox)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
@@ -73,6 +121,23 @@ class BoolWidget(FieldWidget):
         data = self._field.value
         self.checkbox.setChecked(data)
 
+    def setFocus(self, reason=Qt.OtherFocusReason):
+        self.checkbox.setFocus(reason)
+
+
+class EmptyOrIntValidator(QIntValidator):
+    def validate(self, input, pos):
+        if not input:
+            return QValidator.Acceptable
+        return super().validate(input, pos)
+
+
+class EmptyOrDoubleValidator(QDoubleValidator):
+    def validate(self, input, pos):
+        if not input:
+            return QValidator.Acceptable
+        return super().validate(input, pos)
+
 
 class EntryWidget(FieldWidget):
 
@@ -82,16 +147,13 @@ class EntryWidget(FieldWidget):
         self.entry = QLineEdit()
         self.entry.editingFinished.connect(self.onDataChange)
         if issubclass(self._field.type, int):
-            self.entry.setValidator(QIntValidator(self.entry))
+            self.entry.setValidator(EmptyOrIntValidator(self.entry))
         elif issubclass(self._field.type, float):
-            self.entry.setValidator(QDoubleValidator(self.entry))
+            self.entry.setValidator(EmptyOrDoubleValidator(self.entry))
         self.label.setToolTip(self._field.doc)
         self.entry.setToolTip(self._field.doc)
         self.refreshData()
-        layout = FieldLayout()
-        layout.addWidget(self.label)
-        layout.addStretch(1)
-        layout.addWidget(self.entry)
+        layout = FieldLayout(self.label, self.entry)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
@@ -102,22 +164,30 @@ class EntryWidget(FieldWidget):
     def refreshData(self):
         self.entry.setText(str(self._field.value))
 
+    def setFocus(self, reason=Qt.OtherFocusReason):
+        self.entry.setFocus(reason)
+
+
+class NoWheelComboBox(QComboBox):
+    def wheelEvent(self, event):
+        if self.hasFocus:
+            event.ignore()
+        else:
+            self.wheelEvent(event)
+
 
 class ListWidget(FieldWidget):
 
     def __init__(self, index, field, view, parent=None):
         super().__init__(index, field, view, parent)
         self.label = QLabel(self._field.label + ': ')
-        self.combo = QComboBox()
-        self.combo.setFocusPolicy(Qt.StrongFocus)
+        self.combo = NoWheelComboBox()
+        # self.combo.setFocusPolicy(Qt.StrongFocus)
         self.combo.currentIndexChanged.connect(self.onDataChange)
         self.populateCombo()
         self.label.setToolTip(self._field.doc)
         self.combo.setToolTip(self._field.doc)
-        layout = FieldLayout()
-        layout.addWidget(self.label)
-        layout.addStretch(1)
-        layout.addWidget(self.combo)
+        layout = FieldLayout(self.label, self.combo)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
@@ -140,44 +210,8 @@ class ListWidget(FieldWidget):
         i = list(self._field.list).index(data)
         self.combo.setCurrentIndex(i)
 
-
-class FieldLayout(QHBoxLayout):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-    #     self.setSizeConstraint(QLayout.SetMinAndMaxSize)
-    #
-    # def minimumSize(self):
-    #     return QSize(10,0)
-    # #
-    # def maximumSize(self):
-    #     return QSize(300,200)
-
-class FieldView(QFrame):
-
-    def __init__(self, param, parent=None):
-        super().__init__(parent)
-        layout = FieldLayout()
-        label = QLabel(param.label)
-        lineEdit = QLineEdit(str(param.value))
-        # lineEdit.setMinimumHeight(30)
-        layout.addWidget(label)
-        layout.addStretch(1)
-        layout.addWidget(lineEdit)
-        layout.setContentsMargins(0, 0, 0, 0)
-        # self.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-        # self.setMinimumHeight(1)
-        label.setSizePolicy(
-            QSizePolicy.Policy.Maximum,
-            QSizePolicy.Policy.Maximum)
-        lineEdit.setMinimumWidth(100)
-        lineEdit.setMaximumWidth(100)
-        lineEdit.setSizePolicy(
-            QSizePolicy.Policy.Fixed,
-            QSizePolicy.Policy.Fixed)
-        self.setSizePolicy(
-            QSizePolicy.Policy.Minimum,
-            QSizePolicy.Policy.Minimum)
+    def setFocus(self, reason=Qt.OtherFocusReason):
+        self.combo.setFocus(reason)
 
 
 class View(QScrollArea):
@@ -215,10 +249,6 @@ class View(QScrollArea):
         widget = self._populate(self._rootIndex, 0)
         self.setWidget(widget)
         widget.setStyleSheet("""
-            FieldView[depth="1"] {
-                margin-left: 1px;
-                margin-right: 10px;
-                }
             FieldWidget[depth="1"] {
                 margin-left: 1px;
                 margin-right: 10px;
@@ -266,20 +296,20 @@ class View(QScrollArea):
         if not self._model.setData(index, data):
             self.onInvalidValue(self._model.setDataError)
             self.sender().refreshData()
+            self.sender().setFocus()
+            # QTimer.singleShot(0, self.sender().setFocus)
 
     def _fieldWidget(self, index, field, depth=0):
         """Generate and return an appropriate widget for the field"""
-        if field.list:
-            widget = ListWidget(index, field, self)
-            widget.setProperty('depth', depth)
-            return widget
         type_to_widget = {
             bool: BoolWidget,
             float: EntryWidget,
             str: EntryWidget,
             int: EntryWidget,
             }
-        if field.type in type_to_widget.keys():
+        if field.list:
+            widget = ListWidget(index, field, self)
+        elif field.type in type_to_widget.keys():
             widget = type_to_widget[field.type](index, field, self)
         else:
             widget = EntryWidget(index, field, self)
