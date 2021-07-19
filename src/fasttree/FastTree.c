@@ -820,7 +820,15 @@ typedef struct {
 } top_hits_t;
 
 /* Global variables */
+const int nDefaultRateCats = 20;
 char *fileName = NULL;
+bool bQuote = false;
+bool bUseGtr = false;
+bool bUseLg = false;
+bool bUseWag = false;
+int nRateCats = nDefaultRateCats;
+int spr = 2;			/* number of rounds of SPR */
+int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
 /* Options */
 int verbose = 1;
 int showProgress = 1;
@@ -897,7 +905,6 @@ bool exactML = true;		/* Exact or approximate posterior distributions for a.a.s 
 double approxMLminf = 0.95;	/* Only try to approximate posterior distributions if max. value is at least this high */
 double approxMLminratio = 2/3.0;/* Ratio of approximated/true posterior values must be at least this high */
 double approxMLnearT = 0.2;	/* 2nd component of near-constant posterior distribution uses this time scale */
-const int nDefaultRateCats = 20;
 
 /* Performance and memory usage */
 long profileOps = 0;		/* Full profile-based distance operations */
@@ -1671,21 +1678,14 @@ int FastTree(int argc, char **argv) {
   char *intreeFile = NULL;
   bool intree1 = false;		/* the same starting tree each round */
   int nni = -1;			/* number of rounds of NNI, defaults to 4*log2(n) */
-  int spr = 2;			/* number of rounds of SPR */
   int maxSPRLength = 10;	/* maximum distance to move a node */
-  int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
   bool MLlen = false;		/* optimize branch lengths; no topology changes */
   int nBootstrap = 1000;		/* If set, number of replicates of local bootstrap to do */
-  int nRateCats = nDefaultRateCats;
   char *logfile = NULL;
-  bool bUseGtr = false;
-  bool bUseLg = false;
-  bool bUseWag = false;
   bool bUseGtrRates = false;
   double gtrrates[6] = {1,1,1,1,1,1};
   bool bUseGtrFreq = false;
   double gtrfreq[4] = {0.25,0.25,0.25,0.25};
-  bool bQuote = false;
   FILE *fpOut = stdout;
 #ifndef ismodule
   if (isatty(STDIN_FILENO) && argc == 1) {

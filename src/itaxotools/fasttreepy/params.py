@@ -4,12 +4,12 @@ params = Group(key='root', children=[
             Group(key='sequence',
                   label='Sequence',
                   children=[
-                Field(key='alignment',
+                Field(key='ncodes',
                       label='Type',
-                      type=str,
-                      list={'aa': 'Protein',
-                            'nt': 'Nucleotide'},
-                      default='aa'),
+                      type=int,
+                      list={20: 'Protein',
+                            4: 'Nucleotide'},
+                      default=20),
                 Field(key='pseudo',
                       label='Use distance pseudocounts',
                       doc=("Use pseudocounts to estimate distances between\n"
@@ -42,7 +42,7 @@ params = Group(key='root', children=[
                             'lg':  'LG',  # aa
                             'jc':  'JC', # nt
                             'gtr': 'GTR'}, # nt
-                      default='wag'),
+                      default='jtt'),
                 Field(key='ncat',
                       label='CAT number',
                       doc=("The number of rate categories of sites.\n"
@@ -52,8 +52,7 @@ params = Group(key='root', children=[
                       default=20),
                 Field(key='second',
                       label='2nd-level top hits heuristic',
-                      doc=("Use the top-hits heuristic more aggressively.\n"
-                           "Reduces memory usage and running time but\n"
+                      doc=("Reduces memory usage and running time but\n"
                            "may lead to marginal reductions in tree quality."),
                       type=bool,
                       default=False),
@@ -61,6 +60,7 @@ params = Group(key='root', children=[
                       label='Faster neighbor-joining',
                       doc=("Speed up the neighbor-joining phase by\n"
                            "turning off local hill-climbing search.\n"
+                           "Also use top-hits heuristic more aggressively.\n"
                            "Recommended for over 50,000 sequences."),
                       type=bool,
                       default=False),

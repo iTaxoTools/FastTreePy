@@ -27,6 +27,7 @@ https://www.python.org/dev/peps/pep-0489/
 #include <Python.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "wrapio.h"
 
 // From FastTree.c
@@ -142,26 +143,120 @@ int argsFromList(PyObject *list, int* rargc, char*** rargv, char* progname) {
 static PyObject *
 fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 
-	PyObject *dict = kwargs;
-	PyObject *list;
+	PyObject *dict;
 	FILE *f_in;
 
   extern char *fileName;
-  extern int showProgress;
-
+	extern int nCodes;
+	extern double pseudoWeight;
+	extern bool bQuote;
+	extern bool bUseGtr;
+	extern bool bUseLg;
+	extern bool bUseWag;
+	extern int nRateCats;
+	extern bool useTopHits2nd;
+	extern int fastest;
+	extern double tophitsRefresh;
+	extern int spr;
+	extern int MLnni;
+	extern int mlAccuracy;
+	extern bool fastNNI;
 
 	if (!PyArg_ParseTuple(args, "s", &fileName)) return NULL;
 
-  if (parseItem(dict, "show_progress", 'b', &showProgress)) return NULL;
-	printf("- showProgress = %i\n", showProgress);
+	fprintf(stderr, "> Setting options from arguments:\n");
+
+	dict = PyDict_GetItemString(kwargs, "sequence");
+	if (dict != NULL) {
+
+	  if (parseItem(dict, "ncodes", 'i', &nCodes)) return NULL;
+		fprintf(stderr, "- nCodes = %i\n", nCodes);
+
+		int pseudo;
+	  if (parseItem(dict, "pseudo", 'b', &pseudo)) return NULL;
+		if (pseudo) pseudoWeight = 1.0;
+		else pseudoWeight = 1.0;
+		fprintf(stderr, "- pseudoWeight = %.2lf\n", pseudoWeight);
+
+	  if (parseItem(dict, "quote", 'b', &bQuote)) return NULL;
+		fprintf(stderr, "- bQuote = %i\n", bQuote);
+	}
+
+	dict = PyDict_GetItemString(kwargs, "model");
+	if (dict != NULL) {
+		char *ml_model;
+	  if (parseItem(dict, "ml_model", 's', &ml_model)) return NULL;
+		if (strcmp(ml_model, "jtt") == 0) {
+			bUseGtr = false;
+		  bUseLg = false;
+			bUseWag = false;
+		}
+		else if (strcmp(ml_model, "wag") == 0) {
+			bUseGtr = false;
+		  bUseLg = false;
+			bUseWag = true;
+		}
+		else if (strcmp(ml_model, "lg") == 0) {
+			bUseGtr = false;
+		  bUseLg = true;
+			bUseWag = false;
+		}
+		else if (strcmp(ml_model, "jc") == 0) {
+			bUseGtr = false;
+		  bUseLg = false;
+			bUseWag = false;
+		}
+		else if (strcmp(ml_model, "gtr") == 0) {
+			bUseGtr = true;
+		  bUseLg = false;
+			bUseWag = false;
+		}
+		else {
+			PyErr_Format(PyExc_TypeError, "FastTree_main: Unknown model: %s", ml_model);
+			return NULL;
+		}
+		fprintf(stderr, "- bUseGtr = %i\n", bUseGtr);
+		fprintf(stderr, "- bUseLg = %i\n", bUseLg);
+		fprintf(stderr, "- bUseWag = %i\n", bUseWag);
+		free(ml_model);
+
+		if (parseItem(dict, "ncat", 'i', &nRateCats)) return NULL;
+		fprintf(stderr, "- nRateCats = %i\n", nRateCats);
+
+	  if (parseItem(dict, "second", 'b', &useTopHits2nd)) return NULL;
+		fprintf(stderr, "- useTopHits2nd = %i\n", useTopHits2nd);
+
+	  if (parseItem(dict, "fastest", 'b', &fastest)) return NULL;
+		if (fastest) tophitsRefresh = 0.5;
+		fprintf(stderr, "- fastest = %i\n", fastest);
+		fprintf(stderr, "- tophitsRefresh = %.2lf\n", tophitsRefresh);
+	}
+
+	dict = PyDict_GetItemString(kwargs, "topology");
+	if (dict != NULL) {
+	  if (parseItem(dict, "spr", 'i', &spr)) return NULL;
+		fprintf(stderr, "- spr = %i\n", spr);
+
+		if (parseItem(dict, "mlnni", 'i', &MLnni)) return NULL;
+		fprintf(stderr, "- MLnni = %i\n", MLnni);
+
+		int exhaustive;
+		if (parseItem(dict, "exhaustive", 'b', &exhaustive)) return NULL;
+		if (exhaustive) {
+			mlAccuracy = 2;
+			fastNNI = false;
+		}
+		fprintf(stderr, "- mlAccuracy = %i\n", mlAccuracy);
+		fprintf(stderr, "- fastNNI = %i\n", fastNNI);
+	}
 
 	int argc;
 	char **argv;
 	if (argsFromList(PyList_New(0), &argc, &argv, "FastTree")) return NULL;
 
-	fprintf(stderr, "> [%d] ", argc);
+	fprintf(stderr, "> Calling:");
 	for (int i = 0; i < argc; i++) fprintf(stderr, " %s", argv[i]);
-	fprintf(stderr, "\n");
+	fprintf(stderr, " [%d] \n", argc);
   int res = FastTree(argc, argv);
 	if (res) {
 		PyErr_Format(PyExc_TypeError, "FastTree_main: Abnormal exit code: %i", res);
