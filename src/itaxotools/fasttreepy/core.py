@@ -46,6 +46,7 @@ class PhylogenyApproximation():
         self.results = None
         self.log = None
         self.param = params.params
+        self.args = []
 
     def run(self):
         """
@@ -53,7 +54,10 @@ class PhylogenyApproximation():
         save results to a temporary directory.
         """
         kwargs = self.param.dumps()
-        fasttree.main(self.file, **kwargs)
+        path = str(self.fetch())
+        with redirect(fasttree, 'stdout', path, 'w'), \
+             redirect(fasttree, 'stderr', self.log, 'a'):
+                fasttree.main(self.file, args=self.args, **kwargs)
         self.results = self.target
 
     def launch(self):
@@ -63,6 +67,7 @@ class PhylogenyApproximation():
         cause segfaults. Results are saved in a temporary directory,
         use fetch() to retrieve them.
         """
+        self.results = None
         self._temp = tempfile.TemporaryDirectory(prefix='fasttree_')
         self.target = pathlib.Path(self._temp.name).as_posix()
         p = Process(target=self.run)
@@ -72,15 +77,24 @@ class PhylogenyApproximation():
             raise RuntimeError('FastTree internal error, please check logs.')
         self.results = self.target
 
-def quick(input=None, save=None):
+    def fetch(self):
+        """
+        Return the path to the resulting tree file.
+        """
+        if self.target is None:
+            return None
+        return pathlib.Path(self.target) / 'tree'
+
+def quick(input=None, save=None, args=[]):
     """Quick analysis"""
     a = PhylogenyApproximation(input)
+    a.args = args
     a.launch()
     if save is not None:
         savefile = open(save, 'w')
     else:
         savefile = sys.stdout
-    with open(pathlib.Path(a.results) / 'pre') as result:
+    with open(a.fetch()) as result:
         print(result.read(), file=savefile)
     if save is not None:
         savefile.close()

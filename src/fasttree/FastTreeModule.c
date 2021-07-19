@@ -144,6 +144,7 @@ static PyObject *
 fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 
 	PyObject *dict;
+	PyObject *list;
 	FILE *f_in;
 
   extern char *fileName;
@@ -162,9 +163,13 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	extern int mlAccuracy;
 	extern bool fastNNI;
 
-	if (!PyArg_ParseTuple(args, "s", &fileName)) return NULL;
+	int argc;
+	char **argv;
 
 	fprintf(stderr, "> Setting options from arguments:\n");
+
+	if (!PyArg_ParseTuple(args, "s", &fileName)) return NULL;
+	fprintf(stderr, "- fileName = %s\n", fileName);
 
 	dict = PyDict_GetItemString(kwargs, "sequence");
 	if (dict != NULL) {
@@ -250,13 +255,17 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 		fprintf(stderr, "- fastNNI = %i\n", fastNNI);
 	}
 
-	int argc;
-	char **argv;
-	if (argsFromList(PyList_New(0), &argc, &argv, "FastTree")) return NULL;
+	list = PyDict_GetItemString(kwargs, "args");
+	if (list == NULL) {
+		list = PyList_New(0);
+		if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
+		Py_DECREF(list);
+	}
+	else if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
 
 	fprintf(stderr, "> Calling:");
 	for (int i = 0; i < argc; i++) fprintf(stderr, " %s", argv[i]);
-	fprintf(stderr, " [%d] \n", argc);
+	fprintf(stderr, " [%d] \n\n", argc);
   int res = FastTree(argc, argv);
 	if (res) {
 		PyErr_Format(PyExc_TypeError, "FastTree_main: Abnormal exit code: %i", res);
