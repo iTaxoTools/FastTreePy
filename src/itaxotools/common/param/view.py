@@ -21,7 +21,7 @@
 Parameter view for PySide6
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QRect
+from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QRect, QSize
 from PySide6.QtWidgets import (
     QFrame, QLabel, QLineEdit, QCheckBox, QScrollArea, QMessageBox,
     QComboBox, QGroupBox, QVBoxLayout, QHBoxLayout, QLayout)
@@ -36,6 +36,7 @@ class FieldLayout(QLayout):
         super().__init__(parent)
         self.itemList = []
         self.www = 100
+        self.gap = 6
         self.addWidget(label)
         self.addWidget(widget)
 
@@ -59,6 +60,7 @@ class FieldLayout(QLayout):
         for item in self.itemList:
             w += item.sizeHint().width()
             h = max(h, item.sizeHint().height())
+        w += self.gap
         return QSize(w, h)
 
     def minimumSize(self):
@@ -73,7 +75,7 @@ class FieldLayout(QLayout):
         if w >= self.www:
             div = rect.right() - self.www
             rl = QRect(rect)
-            rl.setRight(div)
+            rl.setRight(div - self.gap)
             self.itemList[0].setGeometry(rl)
             rw = QRect(rect)
             rw.setLeft(div)
@@ -124,6 +126,8 @@ class BoolWidget(FieldWidget):
     def setFocus(self, reason=Qt.OtherFocusReason):
         self.checkbox.setFocus(reason)
 
+    def sizeHint(self):
+        return self.checkbox.sizeHint() + QSize(5, 0)
 
 class EmptyOrIntValidator(QIntValidator):
     def validate(self, input, pos):

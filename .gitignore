@@ -14,3 +14,7 @@ __pycache__/
 
 Pipfile
 Pipfile.lock
+
+# Executables
+src/fasttree/FastTree
+src/fasttree/FastTree.exe

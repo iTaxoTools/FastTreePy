@@ -1,0 +1,3 @@
+These are the changes to the original `FastTree.c` source:
+
+...

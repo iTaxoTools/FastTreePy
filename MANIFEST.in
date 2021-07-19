@@ -11,6 +11,3 @@ include setup.py
 
 # Recursively include all common resources
 recursive-include src/itaxotools/**/resources *
-
-# Include module config
-include src/itaxotools/sample/config.json
