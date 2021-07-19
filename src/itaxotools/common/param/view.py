@@ -58,9 +58,9 @@ class FieldLayout(QLayout):
     def sizeHint(self):
         w, h = 0, 0
         for item in self.itemList:
-            w += item.sizeHint().width()
             h = max(h, item.sizeHint().height())
-        w += self.gap
+        w += self.itemList[0].sizeHint().width()
+        w += self.gap + self.www + 10
         return QSize(w, h)
 
     def minimumSize(self):
@@ -202,7 +202,7 @@ class ListWidget(FieldWidget):
                 self.combo.addItem(str(k), k)
         elif isinstance(self._field.list, dict):
             for k, v in self._field.list.items():
-                self.combo.addItem(k, v)
+                self.combo.addItem(v, k)
         self.refreshData()
 
     def onDataChange(self):
@@ -331,9 +331,9 @@ class View(QScrollArea):
         if depth == 0:
             widget = QFrame()
             layout = QVBoxLayout()
-        elif depth == 1:
-            widget = QGroupBox(data.label)
-            layout = QVBoxLayout()
+        # elif depth == 1:
+        #     widget = QGroupBox(data.label)
+        #     layout = QVBoxLayout()
         else:
             widget = QGroupBox(data.label)
             widget.setFlat(True)
