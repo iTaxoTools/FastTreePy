@@ -261,29 +261,45 @@ class Header(QtWidgets.QFrame):
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
 
-        self.labelDescription = QtWidgets.QLabel('DESCRIPTION')
-        self.labelDescription.setAlignment(QtCore.Qt.AlignBottom)
-        self.labelDescription.setStyleSheet("""
+        self.labelTitle = QtWidgets.QLabel('TITLE')
+        self.labelTitle.setAlignment(QtCore.Qt.AlignBottom)
+        self.labelTitle.setStyleSheet("""
             color: palette(Text);
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 14px;
             letter-spacing: 1px;
+            font-weight: bold;
+            text-decoration: underline;
             """)
+            # letter-spacing: 1px;
 
         self.labelCitation = QtWidgets.QLabel('CITATION')
-        self.labelCitation.setAlignment(QtCore.Qt.AlignTop)
+        self.labelCitation.setAlignment(QtCore.Qt.AlignBottom)
         self.labelCitation.setStyleSheet("""
             color: palette(Shadow);
             font-size: 12px;
+            font-style: italic;
             """)
 
-        labels = QtWidgets.QVBoxLayout()
-        labels.addStretch(1)
-        labels.addWidget(self.labelDescription)
-        labels.addWidget(self.labelCitation)
-        labels.addStretch(1)
-        labels.addSpacing(4)
-        labels.setSpacing(4)
+        self.labelDescription = QtWidgets.QLabel('DESCRIPTION')
+        self.labelDescription.setAlignment(QtCore.Qt.AlignTop)
+        self.labelDescription.setStyleSheet("""
+            color: palette(Text);
+            font-size: 12px;
+            letter-spacing: 1px;
+            """)
+            # letter-spacing: 1px;
+            # font-weight: bold;
+
+        labels = QtWidgets.QGridLayout()
+        labels.setRowStretch(0, 2)
+        labels.addWidget(self.labelTitle, 1, 0)
+        labels.addWidget(self.labelCitation, 1, 1)
+        labels.addWidget(self.labelDescription, 2, 0, 1, 3)
+        labels.setRowStretch(3, 2)
+        labels.setColumnStretch(2, 1)
+        labels.setHorizontalSpacing(4)
+        labels.setVerticalSpacing(6)
+        labels.setContentsMargins(0,0,0,4)
 
         self.labelLogoTool = QtWidgets.QLabel()
         self.labelLogoTool.setAlignment(QtCore.Qt.AlignCenter)
@@ -365,6 +381,15 @@ class Header(QtWidgets.QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)
+
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, title):
+        self.labelTitle.setText(title)
+        self._title = title
 
     @property
     def description(self):

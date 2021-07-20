@@ -86,6 +86,10 @@ class Main(widgets.ToolDialog):
         (self.analysis,) = state
 
     def dragEnterEvent(self, event):
+        """Accept single file drops as long as state is idle"""
+        if not self.state['idle'] in list(self.machine.configuration()):
+            event.ignore()
+            return
         data = event.mimeData()
         if data.hasUrls():
             urls = data.urls()
@@ -350,13 +354,13 @@ class Main(widgets.ToolDialog):
             colormap=self.colormap_icon)
         self.header.logoProject = QtGui.QPixmap(
             get_resource('logos/png/itaxotools-micrologo.png'))
+        self.header.title = 'FastTree'
+        self.header.citation = (
+            'by M.N. Price, P.S. Dehal and A.P. Arkin'
+            )
         self.header.description = (
             'Infer approximately-maximum-likelihood trees\n'
             'for large multiple sequence alignments'
-            )
-        self.header.citation = (
-            'FastTree by M.N. Price, P.S. Dehal and A.P. Arkin' + '\n'
-            'Python wrapper by S. Patmanidis'
         )
 
         self.subheader = widgets.Subheader()
@@ -407,6 +411,7 @@ class Main(widgets.ToolDialog):
 
         self.textLogger = TextEditLogger()
         self.textLogger.append(self.about)
+        self.textLogger.document().setDocumentMargin(10)
         self.textLogIO = io.TextEditLoggerIO(self.textLogger)
 
         self.pane['output'] = widgets.Panel(self)
