@@ -50,6 +50,8 @@ int _fflush ( FILE * stream );
 
 #define fflush _fflush
 
+#define exit _exit
+
 // FOR READ ONLY
 // void rewind ( FILE * stream );
 

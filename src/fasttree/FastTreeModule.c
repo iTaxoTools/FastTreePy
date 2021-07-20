@@ -147,6 +147,9 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	PyObject *list;
 	FILE *f_in;
 
+	int argc;
+	char **argv;
+
   extern char *fileName;
 	extern int nCodes;
 	extern double pseudoWeight;
@@ -163,8 +166,8 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	extern int mlAccuracy;
 	extern bool fastNNI;
 
-	int argc;
-	char **argv;
+	extern bool literalArgs;
+	literalArgs = false;
 
 	fprintf(stderr, "> Setting options from parameters:\n\n");
 
@@ -280,9 +283,46 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	return Py_None;
 }
 
+
+static PyObject *
+fasttree_raw(PyObject *self, PyObject *args) {
+
+	PyObject *list;
+
+	int argc;
+	char **argv;
+
+	extern bool literalArgs;
+	literalArgs = true;
+
+	if (!PyArg_ParseTuple(args, "O", &list)) return NULL;
+
+	if (!PyList_Check(list)) {
+		PyErr_Format(PyExc_TypeError, "FastTree_raw: expected list as argument.");
+		return NULL;
+	}
+
+	if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
+
+	int res = FastTree(argc, argv);
+	if (res) {
+		PyErr_Format(PyExc_TypeError, "FastTree_main: Abnormal exit code: %i", res);
+		return NULL;
+	}
+
+	// Required, as streams are redirected by python caller
+	fflush(stdout);
+	fflush(stderr);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef FastTreeMethods[] = {
   {"main",  fasttree_main, METH_VARARGS | METH_KEYWORDS,
    "Run fasttree with given parameters."},
+  {"raw",  fasttree_raw, METH_VARARGS,
+   "Run fasttree on given argv."},
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

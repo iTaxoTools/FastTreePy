@@ -103,17 +103,24 @@ int _vfprintf ( FILE *stream, const char *format, va_list args ) {
   	PyObject *dict = NULL;
   	PyObject *file = NULL;
 
+    va_list temp;
+
     if (!_buffer) {
       PyErr_SetString(PyExc_RuntimeError,	"Buffer not initialised.");
       return -1;
     }
-    while ((done = vsnprintf (_buffer, _buffer_size, format, args)) >= _buffer_size) {
+
+    va_copy(temp, args);
+
+    if ((done = vsnprintf(_buffer, _buffer_size, format, temp)) >= _buffer_size) {
       free(_buffer);
       _buffer_size = done + 1;
+      va_end(temp);
       if (!(_buffer = malloc(sizeof(char) * _buffer_size))) {
         PyErr_SetString(PyExc_RuntimeError,	"Failed to re-allocate memory.");
         return -1;
       }
+      done = vsnprintf(_buffer, _buffer_size, format, args);
     }
 
     if (!(file = __file_from_stream(stream)))
@@ -284,4 +291,10 @@ finally:
   Py_XDECREF(dict);
 	Py_XDECREF(sys);
   return done;
+}
+
+void _exit(int status) {
+  _fflush(stdout);
+  _fflush(stderr);
+  exit(status);
 }
