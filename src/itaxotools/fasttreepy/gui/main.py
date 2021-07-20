@@ -77,11 +77,31 @@ class Main(widgets.ToolDialog):
         if init is not None:
             self.machine.started.connect(init)
 
+        self.setAcceptDrops(True)
+
     def __getstate__(self):
         return (self.analysis,)
 
     def __setstate__(self, state):
         (self.analysis,) = state
+
+    def dragEnterEvent(self, event):
+        data = event.mimeData()
+        if data.hasUrls():
+            urls = data.urls()
+            if len(urls) == 1:
+                url = data.urls()[0]
+                file = QtCore.QFileInfo(url.toLocalFile())
+                if file.isFile():
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event):
+        data = event.mimeData()
+        if data.hasUrls():
+            url = data.urls()[0]
+            self.handleOpen(fileName=url.toLocalFile())
 
     def onReject(self):
         """If running, verify cancel"""
