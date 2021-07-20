@@ -146,6 +146,12 @@ class UProcess(QtCore.QThread):
     Unlike QtCore.QProcess, this launches python functions, not programs.
     Use self.start() to fork/spawn.
 
+    Signals
+    -------
+    done(result) : On success
+    fail(exception) : On exception raised
+    error(exitcode) : On process exit
+
     Example
     -------
 
@@ -169,6 +175,7 @@ class UProcess(QtCore.QThread):
     """
     done = QtCore.Signal(object)
     fail = QtCore.Signal(object)
+    error = QtCore.Signal(object)
 
     def __init__(self, function, *args, **kwargs):
         """
@@ -253,15 +260,10 @@ class UProcess(QtCore.QThread):
                     else:
                         waitList[pipe](data)
 
-        # Make sure process ended smoothly
+        # Emit the proper signal
         if self.process.exitcode != 0 and not self._quit:
-            self.handleErr('Internal error!')
-            exception = RuntimeError('Subprocess exited with error status ' +
-                str(self.process.exitcode))
-            self.fail.emit(exception)
-            return
-
-        if self._data == 'RESULT':
+            self.error.emit(self.process.exitcode)
+        elif self._data == 'RESULT':
             self.done.emit(self._data_obj)
         elif self._data == 'EXCEPTION':
             self.fail.emit(self._data_obj)

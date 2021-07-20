@@ -34,7 +34,8 @@ def get_resource(path):
     return str(_resource_path / path)
 def get_icon(path):
     return str(_resource_path / 'icons/svg' / path)
-
+def get_about():
+    return str(importlib.resources.files(__package__) / 'about.txt')
 
 class TextEditLogger(widgets.TextEditLogger):
     def __init__(self, *args, **kwargs):
@@ -60,6 +61,8 @@ class Main(widgets.ToolDialog):
         self._temp = None
         self.temp = None
 
+        with open(get_about()) as f:
+            self.about = f.read()
         self.setWindowTitle(self.title)
         self.setWindowIcon(QtGui.QIcon(get_resource('logos/ico/fasttree.ico')))
         self.resize(840,540)
@@ -124,40 +127,34 @@ class Main(widgets.ToolDialog):
 
         state = self.state['idle/input.none']
         state.assignProperty(self.action['run'], 'enabled', False)
-        state.assignProperty(self.footer, 'text', 'Waiting for sequences.')
+        def onEntry(event):
+            self.pane['output'].title = 'About'
+        state.onEntry = onEntry
 
         state = self.state['idle/input.file']
         state.assignProperty(self.action['run'], 'enabled', True)
-        state.assignProperty(self.footer, 'text', 'Click "Run" to infer tree.')
+        def onEntry(event):
+            self.pane['output'].title = 'Progress Log'
+        state.onEntry = onEntry
 
         state = self.state['idle/output.none']
         state.assignProperty(self.action['save'], 'enabled', False)
-        def onEntry(event):
-            self.pane['params'].flag = None
-            self.pane['output'].flag = None
-            self.pane['params'].flagTip = None
-            self.pane['output'].flagTip = None
-        state.onEntry = onEntry
+        tip = 'Hover parameters for tips.'
+        state.assignProperty(self.footer, 'text', tip)
 
         state = self.state['idle/output.failed']
         state.assignProperty(self.action['save'], 'enabled', False)
         tip = 'An error occured, please check the logs for details.'
         state.assignProperty(self.footer, 'text', tip)
-        def onEntry(event):
-            self.pane['params'].flag = None
-            self.pane['output'].flag = None
-            self.pane['params'].flagTip = None
-            self.pane['output'].flagTip = None
-        state.onEntry = onEntry
 
         state = self.state['idle/output.complete']
         state.assignProperty(self.action['save'], 'enabled', True)
-        tip = 'Tree generation was successful.'
+        tip = 'Tree generation was successful. Click "Save" to save results.'
         state.assignProperty(self.footer, 'text', tip)
 
         state = self.state['idle/output.outdated']
         state.assignProperty(self.action['save'], 'enabled', True)
-        tip = 'Params have changed, run a new analysis to update results.'
+        tip = 'Parameters have changed, run again to update results.'
         state.assignProperty(self.footer, 'text', tip)
 
         state = self.state['running']
@@ -170,28 +167,10 @@ class Main(widgets.ToolDialog):
 
         internal = QtStateMachine.QAbstractTransition.TransitionType.InternalTransition
 
-        # transition = utility.NamedTransition('EMPTY')
-        # transition.setTransitionType(internal)
-        # def onTransition(event):
-        #     self.setWindowTitle(self.title)
-        #     self.pane['input'].title = 'Input'
-        # transition.onTransition = onTransition
-        # transition.setTargetState(self.state['idle/input.none'])
-        # self.state['idle/input'].addTransition(transition)
-
-        # transition = utility.NamedTransition('UPDATE')
-        # transition.setTransitionType(internal)
-        # def onTransition(event):
-        #     self.setWindowTitle(self.title + ' - From Text')
-        #     self.pane['input'].title = 'Input - From Text'
-        # transition.onTransition = onTransition
-        # transition.setTargetState(self.state['idle/input.raw'])
-        # self.state['idle/input'].addTransition(transition)
-
-        # transition = utility.NamedTransition('UPDATE')
-        # transition.setTransitionType(internal)
-        # transition.setTargetState(self.state['idle/output.outdated'])
-        # self.state['idle/output.complete'].addTransition(transition)
+        transition = utility.NamedTransition('UPDATE')
+        transition.setTransitionType(internal)
+        transition.setTargetState(self.state['idle/output.outdated'])
+        self.state['idle/output.complete'].addTransition(transition)
 
         transition = utility.NamedTransition('OPEN')
         transition.setTransitionType(internal)
@@ -371,7 +350,8 @@ class Main(widgets.ToolDialog):
         self.subheader.icon.setStyleSheet('border-style: none;')
 
         self.subheader.file = QtWidgets.QLineEdit()
-        self.subheader.file.setPlaceholderText('Open a file to begin')
+        self.subheader.file.setPlaceholderText(
+            'Open or drop a file in fasta or interleaved phylip format to begin')
         self.subheader.file.setReadOnly(True)
         self.subheader.file.setStyleSheet("""
             QLineEdit {
@@ -394,6 +374,7 @@ class Main(widgets.ToolDialog):
         self.pane = {}
 
         self.paramModel = Model(self.analysis.param)
+        self.paramModel.dataChanged.connect(self.handleDataChanged)
         self.paramView = View(self.paramModel)
         self.paramView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.paramView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -405,10 +386,11 @@ class Main(widgets.ToolDialog):
         self.pane['params'].body.setContentsMargins(0, 0, 0, 0)
 
         self.textLogger = TextEditLogger()
+        self.textLogger.append(self.about)
         self.textLogIO = io.TextEditLoggerIO(self.textLogger)
 
         self.pane['output'] = widgets.Panel(self)
-        self.pane['output'].title = 'Logs'
+        self.pane['output'].title = 'Progress Log'
         self.pane['output'].footer = ''
         self.pane['output'].body.addWidget(self.textLogger)
         self.pane['output'].body.setContentsMargins(0, 0, 0, 0)
@@ -421,7 +403,7 @@ class Main(widgets.ToolDialog):
         self.body.addSpacing(4)
         # self.body.setContentsMargins(8, 4, 8, 4)
 
-        self.footer = QtWidgets.QLabel('Open a file to begin.')
+        self.footer = QtWidgets.QLabel()
         self.footer.setStyleSheet("""
             QLabel {
                 color: palette(Shadow);
@@ -480,6 +462,10 @@ class Main(widgets.ToolDialog):
         self.header.toolbar.addAction(self.action['run'])
         self.header.toolbar.addAction(self.action['stop'])
 
+    def handleDataChanged(self):
+        """Update output state on param update"""
+        self.machine.postEvent(utility.NamedEvent('UPDATE'))
+
     def handleRunWork(self):
         """Runs on the UProcess, defined here for pickability"""
         self.analysis.log = sys.stdout
@@ -508,9 +494,17 @@ class Main(widgets.ToolDialog):
         def fail(exception):
             self.machine.postEvent(utility.NamedEvent('FAIL', exception))
 
+        def error(exitcode):
+            self.textLogger.append(
+                f'> Internal error: exited with code: {exitcode}\n\n')
+            exception = RuntimeError(
+                f'Subprocess exited with error code {exitcode}')
+            self.machine.postEvent(utility.NamedEvent('FAIL', exception))
+
         self.process = utility.UProcess(self.handleRunWork)
         self.process.done.connect(done)
         self.process.fail.connect(fail)
+        self.process.error.connect(error)
         self.process.setStream(self.textLogIO)
         self.process.start()
 
@@ -542,7 +536,7 @@ class Main(widgets.ToolDialog):
         if len(fileName) == 0:
             return
         self.textLogger.clear()
-        self.textLogger.append(f'Now working on file: {fileName}\n\n')
+        self.textLogger.append(f'> Now working on file: {fileName}\n\n')
         self.machine.postEvent(utility.NamedEvent('OPEN',file=fileName))
         self.file = fileName
 

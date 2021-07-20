@@ -166,7 +166,7 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	int argc;
 	char **argv;
 
-	fprintf(stderr, "> Setting options from arguments:\n\n");
+	fprintf(stderr, "> Setting options from parameters:\n\n");
 
 	if (!PyArg_ParseTuple(args, "s", &fileName)) return NULL;
 	fprintf(stderr, "- fileName = %s\n", fileName);
