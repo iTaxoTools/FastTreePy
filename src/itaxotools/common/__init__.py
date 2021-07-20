@@ -4,4 +4,4 @@
 # It should eventually be moved in its own repository,
 # but for now it is convenient to include with each tool.
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"

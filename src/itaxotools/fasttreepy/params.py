@@ -7,9 +7,9 @@ params = Group(key='root', children=[
                 Field(key='ncodes',
                       label='Type',
                       type=int,
-                      list={20: 'Protein',
-                            4: 'Nucleotide'},
-                      default=20),
+                      list={4: 'Nucleotide',
+                            20: 'Protein'},
+                      default=4),
                 Field(key='pseudo',
                       label='Use distance pseudocounts',
                       doc=("Use pseudocounts to estimate distances between\n"
@@ -55,7 +55,7 @@ params = Group(key='root', children=[
                       doc=("Reduces memory usage and running time but\n"
                            "may lead to marginal reductions in tree quality."),
                       type=bool,
-                      default=False),
+                      default=True),
                 Field(key='fastest',
                       label='Faster neighbor-joining',
                       doc=("Speed up the neighbor-joining phase by\n"
@@ -63,7 +63,7 @@ params = Group(key='root', children=[
                            "Also use top-hits heuristic more aggressively.\n"
                            "Recommended for over 50,000 sequences."),
                       type=bool,
-                      default=False),
+                      default=True),
                 ]),
             Group(key='topology',
                   label='Topology Refinement',

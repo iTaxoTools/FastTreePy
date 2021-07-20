@@ -102,13 +102,14 @@ class UWorker():
         """Required for process spawning."""
         self.__dict__ = state
 
-    def __init__(self, dict):
-        dict['pipeIn'][1].close()
-        self.pipeControl = dict['pipeControl'][1]
-        self.pipeData = dict['pipeData'][1]
-        self.pipeOut = dict['pipeOut'][1]
-        self.pipeErr = dict['pipeErr'][1]
-        self.pipeIn = dict['pipeIn'][0]
+    def __init__(self, uproc):
+        """Configure self from given UProcess"""
+        uproc.pipeIn[1].close()
+        self.pipeControl = uproc.pipeControl[1]
+        self.pipeData = uproc.pipeData[1]
+        self.pipeOut = uproc.pipeOut[1]
+        self.pipeErr = uproc.pipeErr[1]
+        self.pipeIn = uproc.pipeIn[0]
 
     def target(self, function, *args, **kwargs):
         """
@@ -146,7 +147,7 @@ class UProcess(QtCore.QThread):
     Use self.start() to fork/spawn.
 
     Example
-    ----------
+    -------
 
     def work(number):
         print('This runs on the child process.')
@@ -182,13 +183,15 @@ class UProcess(QtCore.QThread):
         """
         super().__init__()
         self._quit = None
+        self._data = None
+        self._data_obj = None
         self.stream = None
         self.pipeControl = multiprocessing.Pipe(duplex=True)
         self.pipeData = multiprocessing.Pipe(duplex=True)
         self.pipeOut = multiprocessing.Pipe(duplex=False)
         self.pipeErr = multiprocessing.Pipe(duplex=False)
         self.pipeIn = multiprocessing.Pipe(duplex=False)
-        self.worker = UWorker(self.__dict__)
+        self.worker = UWorker(self)
         self.process = multiprocessing.Process(
             target=self.worker.target, daemon=True,
             args=(function,)+args, kwargs=kwargs)
@@ -209,7 +212,6 @@ class UProcess(QtCore.QThread):
 
     def _streamOut(self, data):
         self.stream.write(data)
-
 
     def run(self):
         """
@@ -236,12 +238,12 @@ class UProcess(QtCore.QThread):
             self.pipeErr: self.handleErr,
             }
         while waitList and sentinel is not None:
-            waitlist = multiprocessing.connection.wait(waitList.keys())
-            for pipe in waitlist:
+            readyList = multiprocessing.connection.wait(waitList.keys())
+            for pipe in readyList:
                 if pipe == sentinel:
                     # Process exited, but must make sure
-                    # no other pipes are empty before quitting
-                    if len(waitlist) == 1:
+                    # all other pipes are empty before quitting
+                    if len(readyList) == 1:
                         sentinel = None
                 else:
                     try:
@@ -257,17 +259,18 @@ class UProcess(QtCore.QThread):
             exception = RuntimeError('Subprocess exited with error status ' +
                 str(self.process.exitcode))
             self.fail.emit(exception)
+            return
+
+        if self._data == 'RESULT':
+            self.done.emit(self._data_obj)
+        elif self._data == 'EXCEPTION':
+            self.fail.emit(self._data_obj)
 
     def handleControl(self, data):
         """Handle control pipe signals"""
-        if data == 'RESULT':
-            result = self.pipeData.recv()
-            self.done.emit(result)
-            self.process.join()
-        elif data == 'EXCEPTION':
-            exception = self.pipeData.recv()
-            self.fail.emit(exception)
-            self.process.join()
+        self._data = data
+        self._data_obj = self.pipeData.recv()
+        self.process.join()
 
     def handleOut(self, data):
         """Overload this to handle process stdout"""

@@ -1,17 +1,27 @@
-#-----------------------------------------------------------------------------
-# Copyright notice goes here
-#-----------------------------------------------------------------------------
 
-from PySide6 import QtWidgets
-
-import sys
-
-from .main import Main
+"""GUI entry point"""
 
 def main():
-    """Entry point"""
+    """
+    Show the FastTree main window.
+    Imports are made locally to optimize multiprocessing.
+    """
+
+    import sys
+    import pathlib
+    from PySide6 import QtWidgets
+    from PySide6 import QtCore
+    from .main import Main
+
+    def init():
+        if len(sys.argv) >= 2:
+            file = pathlib.Path(sys.argv[-1])
+            main.handleOpen(fileName=str(file))
+
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle('Fusion')
-    main = Main()
+    main = Main(init=init)
+    main.setWindowFlags(QtCore.Qt.Window)
+    main.setModal(True)
     main.show()
     sys.exit(app.exec_())

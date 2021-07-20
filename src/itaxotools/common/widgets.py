@@ -447,8 +447,8 @@ class Panel(QtWidgets.QWidget):
                 color: palette(Light);
                 background: palette(Shadow);
                 border-right: 1px solid palette(Dark);
-                border-bottom: 2px solid palette(Dark);
-                border-bottom-left-radius: 1px;
+                border-bottom: 2px solid palette(Shadow);
+                border-bottom-left-radius: 0px;
                 border-top-right-radius: 1px;
                 padding-top: 2px;
                 }
@@ -512,7 +512,7 @@ class Panel(QtWidgets.QWidget):
         layout.addLayout(layoutTop, 0)
         layout.addLayout(self.body, 1)
         layout.addWidget(self.labelFoot, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)

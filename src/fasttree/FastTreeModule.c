@@ -166,7 +166,7 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	int argc;
 	char **argv;
 
-	fprintf(stderr, "> Setting options from arguments:\n");
+	fprintf(stderr, "> Setting options from arguments:\n\n");
 
 	if (!PyArg_ParseTuple(args, "s", &fileName)) return NULL;
 	fprintf(stderr, "- fileName = %s\n", fileName);
@@ -263,7 +263,7 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	}
 	else if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
 
-	fprintf(stderr, "> Calling:");
+	fprintf(stderr, "\n> Calling:");
 	for (int i = 0; i < argc; i++) fprintf(stderr, " %s", argv[i]);
 	fprintf(stderr, " [%d] \n\n", argc);
   int res = FastTree(argc, argv);
@@ -279,7 +279,6 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-
 
 static PyMethodDef FastTreeMethods[] = {
   {"main",  fasttree_main, METH_VARARGS | METH_KEYWORDS,

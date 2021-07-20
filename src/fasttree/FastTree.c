@@ -2530,7 +2530,7 @@ int FastTree(int argc, char **argv) {
   if (fpLog != NULL)
     fclose(fpLog);
   if (fpOut != stdout) fclose(fpOut);
-  exit(0);
+  return 0;
 }
 
 void ProgressReport(char *format, int i1, int i2, int i3, int i4) {

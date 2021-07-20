@@ -2,13 +2,14 @@
 
 block_cipher = None
 
+# Could also use pyinstaller's Entrypoint()
 a = Analysis(['fasttree.py'],
              binaries=[],
              datas=[],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
-             excludes=[],
+             excludes=['matplotlib','tk','tkinter'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,
@@ -21,11 +22,12 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='fasttree',
+          name='FastTreePy',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False)
+          console=False,
+          icon='../src/itaxotools/common/resources/logos/ico/fasttree.ico' )
