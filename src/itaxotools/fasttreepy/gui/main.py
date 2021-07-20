@@ -35,7 +35,7 @@ def get_resource(path):
 def get_icon(path):
     return str(_resource_path / 'icons/svg' / path)
 def get_about():
-    return str(importlib.resources.files(__package__) / 'about.txt')
+    return str(importlib.resources.files(__package__) / 'about.html')
 
 class TextEditLogger(widgets.TextEditLogger):
     def __init__(self, *args, **kwargs):
@@ -61,8 +61,6 @@ class Main(widgets.ToolDialog):
         self._temp = None
         self.temp = None
 
-        with open(get_about()) as f:
-            self.about = f.read()
         self.setWindowTitle(self.title)
         self.setWindowIcon(QtGui.QIcon(get_resource('logos/ico/fasttree.ico')))
         self.resize(840,540)
@@ -151,15 +149,13 @@ class Main(widgets.ToolDialog):
 
         state = self.state['idle/input.none']
         state.assignProperty(self.action['run'], 'enabled', False)
-        def onEntry(event):
-            self.pane['output'].title = 'About'
-        state.onEntry = onEntry
+        state.assignProperty(self.pane['output'], 'visible', False)
+        state.assignProperty(self.pane['about'], 'visible', True)
 
         state = self.state['idle/input.file']
         state.assignProperty(self.action['run'], 'enabled', True)
-        def onEntry(event):
-            self.pane['output'].title = 'Progress Log'
-        state.onEntry = onEntry
+        state.assignProperty(self.pane['output'], 'visible', True)
+        state.assignProperty(self.pane['about'], 'visible', False)
 
         state = self.state['idle/output.none']
         state.assignProperty(self.action['save'], 'enabled', False)
@@ -290,8 +286,8 @@ class Main(widgets.ToolDialog):
                 QtGui.QPalette.ToolTipText: 'brown',
                 # These seem bugged anyway
                 QtGui.QPalette.BrightText: 'green',
-                QtGui.QPalette.Link: 'green',
-                QtGui.QPalette.LinkVisited: 'green',
+                QtGui.QPalette.Link: 'red',
+                QtGui.QPalette.LinkVisited: 'pink',
                 },
             QtGui.QPalette.Disabled: {
                 QtGui.QPalette.Window: 'light',
@@ -410,7 +406,6 @@ class Main(widgets.ToolDialog):
         self.pane['params'].body.setContentsMargins(0, 0, 0, 0)
 
         self.textLogger = TextEditLogger()
-        self.textLogger.append(self.about)
         self.textLogger.document().setDocumentMargin(10)
         self.textLogIO = io.TextEditLoggerIO(self.textLogger)
 
@@ -420,11 +415,23 @@ class Main(widgets.ToolDialog):
         self.pane['output'].body.addWidget(self.textLogger)
         self.pane['output'].body.setContentsMargins(0, 0, 0, 0)
 
+        self.textAbout = QtWidgets.QTextBrowser()
+        self.textAbout.setOpenExternalLinks(True)
+        self.textAbout.setSource(get_about())
+        self.textAbout.document().setDocumentMargin(10)
+
+        self.pane['about'] = widgets.Panel(self)
+        self.pane['about'].title = 'About'
+        self.pane['about'].footer = ''
+        self.pane['about'].body.addWidget(self.textAbout)
+        self.pane['about'].body.setContentsMargins(0, 0, 0, 0)
+
         self.body = QtWidgets.QHBoxLayout()
         self.body.addSpacing(4)
         self.body.addWidget(self.pane['params'], 0)
         self.body.addSpacing(8)
         self.body.addWidget(self.pane['output'], 1)
+        self.body.addWidget(self.pane['about'], 1)
         self.body.addSpacing(4)
         # self.body.setContentsMargins(8, 4, 8, 4)
 
