@@ -18,7 +18,7 @@ import sys
 from itaxotools.common import resources
 
 from itaxotools.common.param.model import Model
-from itaxotools.common.param.view import View
+from itaxotools.common.param.view import View, EntryWidget, ListWidget, FieldWidget
 from itaxotools.common.param import Field
 
 from itaxotools.common import utility
@@ -37,10 +37,88 @@ def get_icon(path):
 def get_about():
     return str(importlib.resources.files(__package__) / 'about.html')
 
+
+class RadioWidget(FieldWidget):
+
+    dataChanged = QtCore.Signal(object, object)
+
+    def __init__(self, index, field, view, parent=None):
+        super().__init__(index, field, view, parent)
+        layout = QtWidgets.QVBoxLayout()
+        self.radio = dict()
+        for k, v in field.list.items():
+            self.radio[k] = QtWidgets.QRadioButton(v)
+            self.radio[k].toggled.connect(self.onDataChange)
+            self.radio[k].setToolTip(field.doc)
+            layout.addWidget(self.radio[k])
+        self.refreshData()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+    def onDataChange(self, state):
+        for k in self.radio:
+            if self.radio[k].isChecked():
+                self.dataChanged.emit(self._index, k)
+                break
+
+    def refreshData(self):
+        value = self._field.value
+        for k in self.radio:
+            self.radio[k].blockSignals(True)
+            self.radio[k].setChecked(k == value)
+            self.radio[k].blockSignals(False)
+
+    def setFocus(self, reason=QtCore.Qt.OtherFocusReason):
+        self.radio[self._field.value].setFocus(reason)
+
+    # def sizeHint(self):
+    #     return self.checkbox.sizeHint() + QSize(5, 0)
+
+
+class ModelListWidget(ListWidget):
+    """Changes contents depending on sequence type"""
+
+    ncodeDict = {4: {'jc':  'JC', 'gtr': 'GTR'},
+                 20: {'jtt': 'JTT', 'wag': 'WAG', 'lg':  'LG'}}
+
+    def __init__(self, index, field, view, parent=None):
+        self.param = view.model().rootItem
+        super().__init__(index, field, view, parent)
+
+    def populateCombo(self):
+        self.combo.blockSignals(True)
+        self.combo.clear()
+        d = self.ncodeDict[self.param.sequence.ncodes.value]
+        for k, v in d.items():
+            self.combo.addItem(v, k)
+        self.combo.blockSignals(False)
+        self.refreshData()
+
+    def onModelDataChange(self, index):
+        """Change contents if ncodes is altered"""
+        param = self._view.model().data(index, Model.DataRole)
+        if param is self.param.sequence.ncodes:
+            self.populateCombo()
+        if index == self._index:
+            self.refreshData()
+
+    def refreshData(self):
+        value = self._field.value
+        try:
+            d = self.ncodeDict[self.param.sequence.ncodes.value]
+            i = list(d.keys()).index(value)
+            self.combo.blockSignals(True)
+            self.combo.setCurrentIndex(i)
+            self.combo.blockSignals(False)
+        except ValueError:
+            self.combo.setCurrentIndex(0)
+            v = self.combo.currentData()
+            self.dataChanged.emit(self._index, v)
+
+
 class TextEditLogger(widgets.TextEditLogger):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.document().setDocumentMargin(6)
         self.setStyleSheet("""
             QTextEdit {
                 background-color: palette(Base);
@@ -398,6 +476,10 @@ class Main(widgets.ToolDialog):
         self.paramView = View(self.paramModel)
         self.paramView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.paramView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.paramView.addCustomParamWidget(
+            self.analysis.param.sequence.ncodes, RadioWidget)
+        self.paramView.addCustomParamWidget(
+            self.analysis.param.model.ml_model, ModelListWidget)
 
         self.pane['params'] = widgets.Panel(self)
         self.pane['params'].title = 'Parameters'
@@ -496,7 +578,8 @@ class Main(widgets.ToolDialog):
 
     def handleDataChanged(self):
         """Update output state on param update"""
-        self.machine.postEvent(utility.NamedEvent('UPDATE'))
+        if self.machine is not None:
+            self.machine.postEvent(utility.NamedEvent('UPDATE'))
 
     def handleRunWork(self):
         """Runs on the UProcess, defined here for pickability"""

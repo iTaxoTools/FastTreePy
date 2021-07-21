@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QValidator, QIntValidator, QDoubleValidator
 
 from . import Field
-
+from .model import Model
 
 class FieldLayout(QLayout):
     """Last widget added has the same width for all instances"""
@@ -89,10 +89,17 @@ class FieldWidget(QFrame):
 
     def __init__(self, index, field, view, parent=None):
         super().__init__(parent)
-        view.dataChanged.connect(self.refreshData)
+        view.dataChanged.connect(self.onModelDataChange)
+        self.dataChanged.connect(view.onWidgetDataChange)
         self._index = index
         self._field = field
         self._view = view
+
+    def onModelDataChange(self, index):
+        """Refresh data if model index was updated"""
+        data = self._view.model().data(index, Model.DataRole)
+        if index == self._index:
+            self.refreshData()
 
     def refreshData(self):
         """Called by view when field value is changed"""
@@ -115,19 +122,22 @@ class BoolWidget(FieldWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def onDataChange(self):
+    def onDataChange(self, state):
         v = self.checkbox.isChecked()
         self.dataChanged.emit(self._index, v)
 
     def refreshData(self):
         data = self._field.value
+        self.checkbox.blockSignals(True)
         self.checkbox.setChecked(data)
+        self.checkbox.blockSignals(False)
 
     def setFocus(self, reason=Qt.OtherFocusReason):
         self.checkbox.setFocus(reason)
 
     def sizeHint(self):
         return self.checkbox.sizeHint() + QSize(5, 0)
+
 
 class EmptyOrIntValidator(QIntValidator):
     def validate(self, input, pos):
@@ -206,28 +216,32 @@ class ListWidget(FieldWidget):
         self.refreshData()
 
     def onDataChange(self):
-        v = self.combo.currentData()
-        self.dataChanged.emit(self._index, v)
+        if self.combo.count() > 0:
+            v = self.combo.currentData()
+            self.dataChanged.emit(self._index, v)
 
     def refreshData(self):
         data = self._field.value
         i = list(self._field.list).index(data)
+        self.combo.blockSignals(True)
         self.combo.setCurrentIndex(i)
+        self.combo.blockSignals(False)
 
     def setFocus(self, reason=Qt.OtherFocusReason):
         self.combo.setFocus(reason)
 
 
 class View(QScrollArea):
-
-    # Emit to update field widgets on model data change
-    dataChanged = Signal()
+    """Widget-based view for param.Model"""
+    # Emited for every index when model data change
+    dataChanged = Signal(object)
 
     def __init__(self, model=None, parent=None):
         super().__init__(parent)
         self._model = None
         self._rootIndex = QModelIndex()
         self._widgets = dict()
+        self._customParamClass = dict()
         self.setWidgetResizable(False)
         if model is not None:
             self.setModel(model)
@@ -245,7 +259,7 @@ class View(QScrollArea):
     def setModel(self, model):
         self._widgets = dict()
         self._model = model
-        model.dataChanged.connect(self._onModelDataChange)
+        model.dataChanged.connect(self.onModelDataChange)
         self.setRootIndex(QModelIndex())
         self.draw()
 
@@ -291,11 +305,24 @@ class View(QScrollArea):
         """Called when a field value was invalid"""
         QMessageBox.warning(self, 'Warning', error)
 
-    def _onModelDataChange(self, topLeft, bottomRight, roles):
-        """Simply refresh all widgets"""
-        self.dataChanged.emit()
+    def addCustomParamWidget(self, param, _class):
+        """The view for `param` will be an instance of `_class`"""
+        self._customParamClass[id(param)] = _class
+        self.draw()
 
-    def _onWidgetDataChange(self, index, data):
+    def onModelDataChange(self, topLeft, bottomRight, roles):
+        """Send signal updates for all indices changed"""
+        if bottomRight.parent() != topLeft.parent():
+            raise RuntimeError(
+                'View: Model dataChanged items have different parents')
+        parent = topLeft.parent()
+        top = topLeft.row()
+        bottom = bottomRight.row()
+        for row in range(top, bottom+1):
+            index = self._model.index(row, 0, parent)
+            self.dataChanged.emit(index)
+
+    def onWidgetDataChange(self, index, data):
         """Update model"""
         if not self._model.setData(index, data):
             self.onInvalidValue(self._model.setDataError)
@@ -311,13 +338,15 @@ class View(QScrollArea):
             str: EntryWidget,
             int: EntryWidget,
             }
-        if field.list:
+        if id(field) in self._customParamClass:
+            _class = self._customParamClass[id(field)]
+            widget = _class(index, field, self)
+        elif field.list:
             widget = ListWidget(index, field, self)
         elif field.type in type_to_widget.keys():
             widget = type_to_widget[field.type](index, field, self)
         else:
             widget = EntryWidget(index, field, self)
-        widget.dataChanged.connect(self._onWidgetDataChange)
         widget.setProperty('depth', depth)
         return widget
 

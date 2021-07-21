@@ -5,10 +5,12 @@ params = Group(key='root', children=[
                   label='Sequence',
                   children=[
                 Field(key='ncodes',
-                      label='Type',
+                      label='Alignment type',
+                      doc=("Selecting the correct alignment type for your\n"
+                           "input improves performance."),
                       type=int,
-                      list={4: 'Nucleotide',
-                            20: 'Protein'},
+                      list={4: 'Nucleotide alignment',
+                            20: 'Protein alignment'},
                       default=4),
                 Field(key='pseudo',
                       label='Use distance pseudocounts',
