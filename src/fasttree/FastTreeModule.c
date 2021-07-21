@@ -145,12 +145,14 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 
 	PyObject *dict;
 	PyObject *list;
-	FILE *f_in;
+	PyObject *obj;
+
+	// Cannot malloc() extern char *fileName, memory address is overwritten!
+  char *fileName;
 
 	int argc;
 	char **argv;
 
-  extern char *fileName;
 	extern int nCodes;
 	extern double pseudoWeight;
 	extern bool bQuote;
@@ -166,13 +168,12 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	extern int mlAccuracy;
 	extern bool fastNNI;
 
-	extern bool literalArgs;
-	literalArgs = false;
-
 	fprintf(stderr, "> Setting options from parameters:\n\n");
 
 	if (!PyArg_ParseTuple(args, "s", &fileName)) return NULL;
 	fprintf(stderr, "- fileName = %s\n", fileName);
+
+	obj = Py_BuildValue("s", fileName);
 
 	dict = PyDict_GetItemString(kwargs, "sequence");
 	if (dict != NULL) {
@@ -259,12 +260,10 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	}
 
 	list = PyDict_GetItemString(kwargs, "args");
-	if (list == NULL) {
-		list = PyList_New(0);
-		if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
-		Py_DECREF(list);
-	}
-	else if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
+	if (list == NULL) list = PyList_New(0);
+	else Py_INCREF(list);
+	if (PyList_Append(list, obj)) return NULL;
+	if (argsFromList(list, &argc, &argv, "FastTree")) return NULL;
 
 	fprintf(stderr, "\n> Calling:");
 	for (int i = 0; i < argc; i++) fprintf(stderr, " %s", argv[i]);
@@ -279,6 +278,9 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	fflush(stdout);
 	fflush(stderr);
 
+	Py_DECREF(list);
+	Py_DECREF(obj);
+
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -291,9 +293,6 @@ fasttree_raw(PyObject *self, PyObject *args) {
 
 	int argc;
 	char **argv;
-
-	extern bool literalArgs;
-	literalArgs = true;
 
 	if (!PyArg_ParseTuple(args, "O", &list)) return NULL;
 

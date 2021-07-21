@@ -844,8 +844,6 @@ typedef struct {
 #endif
 } top_hits_t;
 
-/* Module globals */
-bool literalArgs = false;
 /* Global variables */
 char *fileName = NULL;
 bool bQuote = false;
@@ -1726,7 +1724,7 @@ int FastTree(int argc, char **argv) {
     exit(0);
   }
 #else
-  if ((literalArgs) && (argc == 1)) {
+  if (argc == 1) {
     fprintf(stderr, "Usage for FastTree version %s %s%s:\n%s",
       FT_VERSION, SSE_STRING, OpenMPString(), usage);
     exit(0);
@@ -1971,8 +1969,7 @@ int FastTree(int argc, char **argv) {
             "You may want to recompile with -DUSE_DOUBLE\n");
 #endif
 
-  if (literalArgs)
-    fileName = iArg == (argc-1) ?  argv[argc-1] : NULL;
+  fileName = iArg == (argc-1) ?  argv[argc-1] : NULL;
 
   if (slow && fastest) {
     fprintf(stderr,"Cannot be both slow and fastest\n");
