@@ -292,9 +292,9 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include <sys/time.h>
+// #include <sys/time.h>
 #include <ctype.h>
-#include <unistd.h>
+// #include <unistd.h>
 #ifdef TRACK_MEMORY
 /* malloc.h apparently doesn't exist on MacOS */
 #include <malloc.h>
@@ -305,6 +305,18 @@
 #include <Python.h>
 #include "wrapio.h"
 #endif
+
+//#ifdef _WIN32
+typedef struct timeval {
+  long int tv_sec;
+  long int tv_usec;
+} timeval;
+
+int gettimeofday(struct timeval* t, char* timezone) {
+  t->tv_sec = 0;
+  t->tv_usec = 0;
+}
+//#endif
 
 /* Compile with -DOPENMP to turn on multithreading */
 #ifdef OPENMP
@@ -822,13 +834,13 @@ typedef struct {
 /* Module globals */
 bool literalArgs = false;
 /* Global variables */
-const int nDefaultRateCats = 20;
 char *fileName = NULL;
 bool bQuote = false;
 bool bUseGtr = false;
 bool bUseLg = false;
 bool bUseWag = false;
-int nRateCats = nDefaultRateCats;
+int nDefaultRateCats = 20;
+int nRateCats = 20;
 int spr = 2;			/* number of rounds of SPR */
 int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
 /* Options */
@@ -2561,7 +2573,7 @@ void ProgressReport(char *format, int i1, int i2, int i3, int i4) {
     timeval_subtract(&elapsed,&time_now,&time_begin);
     fprintf(stderr, "%7i.%2.2i seconds: ", (int)elapsed.tv_sec, (int)(elapsed.tv_usec/10000));
     fprintf(stderr, format, i1, i2, i3, i4);
-    if (verbose > 1 || !isatty(STDERR_FILENO)) {
+    if (verbose > 1 || !isatty(fileno(stderr))) {
       fprintf(stderr, "\n");
     } else {
       fprintf(stderr, "   \r");

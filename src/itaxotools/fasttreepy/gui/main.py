@@ -39,6 +39,26 @@ from itaxotools.common import io
 
 from .. import core
 
+# import os
+
+# def get_resource_path(module):
+#     try:
+#         path = importlib.resources.files(module)
+#         return path
+#     except Exception:
+#         path = getattr(sys, '_MEIPASS', os.path.dirname(module.__file__))
+#         print('>', path)
+#         return pathlib.Path(path)
+#
+# _resource_path = get_resource_path(resources)
+# def get_resource(path):
+#     return str(_resource_path / path)
+# def get_icon(path):
+#     return str(_resource_path / 'icons/svg' / path)
+# def get_about():
+#     path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
+#     print('!!!', path)
+#     return str(pathlib.Path(path) / 'about.html')
 
 _resource_path = importlib.resources.files(resources)
 def get_resource(path):
