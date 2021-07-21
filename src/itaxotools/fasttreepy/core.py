@@ -20,15 +20,14 @@
 from multiprocessing import Process
 
 import tempfile
-import shutil
 import pathlib
-import os
 import sys
 
 from itaxotools.common.io import redirect
 
 from . import fasttree
 from . import params
+
 
 class PhylogenyApproximation():
 
@@ -57,7 +56,7 @@ class PhylogenyApproximation():
         path = str(self.fetch())
         with redirect(fasttree, 'stdout', path, 'w'), \
              redirect(fasttree, 'stderr', self.log, 'a'):
-                fasttree.main(self.file, args=self.args, **kwargs)
+            fasttree.main(self.file, args=self.args, **kwargs)
         self.results = self.target
 
     def launch(self):
@@ -84,6 +83,7 @@ class PhylogenyApproximation():
         if self.target is None:
             return None
         return pathlib.Path(self.target) / 'tree'
+
 
 def quick(input=None, save=None, args=[]):
     """Quick analysis"""

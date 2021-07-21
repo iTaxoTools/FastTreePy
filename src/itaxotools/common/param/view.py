@@ -21,14 +21,14 @@
 Parameter view for PySide6
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QRect, QSize
+from PySide6.QtCore import Qt, QModelIndex, Signal, QRect, QSize
 from PySide6.QtWidgets import (
     QFrame, QLabel, QLineEdit, QCheckBox, QScrollArea, QMessageBox,
     QComboBox, QGroupBox, QVBoxLayout, QHBoxLayout, QLayout, QPushButton)
 from PySide6.QtGui import QValidator, QIntValidator, QDoubleValidator
 
 from . import Field
-from .model import Model
+
 
 class FieldLayout(QLayout):
     """Last widget added has the same width for all instances"""
@@ -97,7 +97,6 @@ class FieldWidget(QFrame):
 
     def onModelDataChange(self, index):
         """Refresh data if model index was updated"""
-        data = self._view.model().data(index, Model.DataRole)
         if index == self._index:
             self.refreshData()
 

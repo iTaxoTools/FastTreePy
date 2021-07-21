@@ -1,6 +1,20 @@
-#-----------------------------------------------------------------------------
-# Copyright notice goes here
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# FastTreePy - Maximum-likelihood phylogenetic tree approximation with FastTree
+# Copyright (C) 2021  Patmanidis Stefanos
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------
 
 """Long module description"""
 
@@ -15,19 +29,16 @@ import pathlib
 import shutil
 import sys
 
-from itaxotools.common import resources
-
 from itaxotools.common.param.model import Model
-from itaxotools.common.param.view import View, EntryWidget, ListWidget, FieldWidget
-from itaxotools.common.param import Field
+from itaxotools.common.param.view import View, ListWidget, FieldWidget
 
 from itaxotools.common import utility
 from itaxotools.common import widgets
 from itaxotools.common import resources
 from itaxotools.common import io
 
-from ..params import params
 from .. import core
+
 
 _resource_path = importlib.resources.files(resources)
 def get_resource(path):
@@ -141,7 +152,7 @@ class Main(widgets.ToolDialog):
 
         self.setWindowTitle(self.title)
         self.setWindowIcon(QtGui.QIcon(get_resource('logos/ico/fasttree.ico')))
-        self.resize(840,540)
+        self.resize(840, 540)
 
         self.process = None
         self.machine = None
@@ -408,12 +419,12 @@ class Main(widgets.ToolDialog):
                 '#f00': color['orange'],
                 },
             }
-        self.colormap_icon =  {
+        self.colormap_icon = {
             '#000': color['black'],
             '#f00': color['red'],
             '#f88': color['pink'],
             }
-        self.colormap_icon_light =  {
+        self.colormap_icon_light = {
             '#000': color['iron'],
             '#ff0000': color['red'],
             '#ffa500': color['pink'],
@@ -603,7 +614,7 @@ class Main(widgets.ToolDialog):
             self.analysis.results = result
             with open(self.analysis.fetch()) as output:
                 self.textLogger.append(
-                    f'\n> Resulting tree: \n\n{output.read()}\n');
+                    f'\n> Resulting tree: \n\n{output.read()}\n')
             self.machine.postEvent(utility.NamedEvent('DONE', True))
 
         def fail(exception):
@@ -652,7 +663,7 @@ class Main(widgets.ToolDialog):
             return
         self.textLogger.clear()
         self.textLogger.append(f'> Now working on file: {fileName}\n\n')
-        self.machine.postEvent(utility.NamedEvent('OPEN',file=fileName))
+        self.machine.postEvent(utility.NamedEvent('OPEN', file=fileName))
         self.file = fileName
 
     def handleSave(self):

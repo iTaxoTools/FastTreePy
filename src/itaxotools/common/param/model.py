@@ -76,8 +76,7 @@ class Model(QAbstractItemModel):
     def columnCount(self, parent):
         return len(self.columns)
 
-    def data(self, index,
-            role=Qt.ItemDataRole.DisplayRole):
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return None
         item = index.internalPointer()
@@ -94,8 +93,7 @@ class Model(QAbstractItemModel):
             return item
         return None
 
-    def setData(self, index, value,
-            role=Qt.ItemDataRole.EditRole):
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         try:
             if index.isValid() and role == Qt.ItemDataRole.EditRole:
                 item = index.internalPointer()
@@ -119,14 +117,14 @@ class Model(QAbstractItemModel):
         return super().flags(index) | flag
 
     def headerData(self, section, orientation,
-            role=Qt.ItemDataRole.DisplayRole):
+                   role=Qt.ItemDataRole.DisplayRole):
         if (orientation == Qt.Orientation.Horizontal and
                 role == Qt.ItemDataRole.DisplayRole):
             return self.headers[section]
         return None
 
     def setHeaderData(self, section, orientation, value,
-            role=Qt.ItemDataRole.DisplayRole):
+                      role=Qt.ItemDataRole.DisplayRole):
         if (orientation == Qt.Orientation.Horizontal and
                 role == Qt.ItemDataRole.DisplayRole):
             self.headers[section] = value

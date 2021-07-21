@@ -1,6 +1,7 @@
 
 """GUI entry point"""
 
+
 def main():
     """
     Show the FastTree main window.

@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Commons - Utility classes for iTaxoTools modules
 # Copyright (C) 2021  Patmanidis Stefanos
 #
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 """Custom PySide6 widgets for iTaxoTools"""
@@ -28,7 +28,7 @@ import re
 
 
 ##############################################################################
-### Logging
+# Logging
 
 class TextEditLogger(QtWidgets.QPlainTextEdit):
     """Thread-safe log display in a QPlainTextEdit"""
@@ -42,9 +42,9 @@ class TextEditLogger(QtWidgets.QPlainTextEdit):
     @QtCore.Slot(object)
     def _appendTextInline(self, text):
         """Using signals ensures thread safety"""
-        self.moveCursor(QtGui.QTextCursor.End);
-        self.insertPlainText(text);
-        self.moveCursor(QtGui.QTextCursor.End);
+        self.moveCursor(QtGui.QTextCursor.End)
+        self.insertPlainText(text)
+        self.moveCursor(QtGui.QTextCursor.End)
 
     def append(self, text):
         """Call this to append text to the widget"""
@@ -52,7 +52,7 @@ class TextEditLogger(QtWidgets.QPlainTextEdit):
 
 
 ##############################################################################
-### Layout
+# Layout
 
 class TabWidget(QtWidgets.QGroupBox):
     """Tab-like to be used as corner widget of QTabWidget"""
@@ -64,23 +64,24 @@ class TabWidget(QtWidgets.QGroupBox):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         self.setStyleSheet(
-        """
-        QGroupBox {
-            border: 1px solid palette(dark);
-            border-bottom: none;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-            min-width: 1ex;
-            padding: 2px;
-            margin: 0px;
-        }
-        QGroupBox:enabled  {
-            background: palette(Light);
-        }
-        QGroupBox:!enabled  {
-            background: palette(Window);
-        }
-        """)
+            """
+            QGroupBox {
+                border: 1px solid palette(dark);
+                border-bottom: none;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                min-width: 1ex;
+                padding: 2px;
+                margin: 0px;
+            }
+            QGroupBox:enabled  {
+                background: palette(Light);
+            }
+            QGroupBox:!enabled  {
+                background: palette(Window);
+            }
+            """)
+
 
 class SearchWidget(QtWidgets.QLineEdit):
     """Embedded line edit with search button"""
@@ -88,12 +89,12 @@ class SearchWidget(QtWidgets.QLineEdit):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setStyleSheet(
-        """
-        SearchWidget {
-            min-width: 200px;
-            padding-left: 2px;
-            }
-        """)
+            """
+            SearchWidget {
+                min-width: 200px;
+                padding-left: 2px;
+                }
+            """)
 
     def setSearchAction(self, action):
         """Bind a QAction to the widget"""
@@ -106,7 +107,7 @@ class SearchWidget(QtWidgets.QLineEdit):
 
 
 ##############################################################################
-### Vector Graphics
+# Vector Graphics
 
 class VectorPixmap(QtGui.QPixmap):
     """A colored vector pixmap"""
@@ -141,13 +142,16 @@ class VectorPixmap(QtGui.QPixmap):
         #         '|'.join(map(re.escape, colormap.keys()))+')'
         #     # replace just the color according to colormap
         #     print(regex)
-        #     text = re.sub(regex, lambda mo: mo.group('prefix') + colormap[mo.group('color')], text)
+        #     text = re.sub(regex, lambda mo:
+        #         mo.group('prefix') + colormap[mo.group('color')], text)
 
         if colormap is not None:
-            regex = '(?P<color>' + '|'.join(map(re.escape, colormap.keys()))+')'
+            regex = '(?P<color>'
+            regex += '|'.join(map(re.escape, colormap.keys()))+')'
             text = re.sub(regex, lambda mo: colormap[mo.group('color')], text)
 
         return QtCore.QByteArray(text.encode())
+
 
 class VectorIcon(QtGui.QIcon):
     """A colored vector icon"""
@@ -155,11 +159,12 @@ class VectorIcon(QtGui.QIcon):
         """Create pixmaps with colormaps matching the dictionary modes"""
         super().__init__()
         for mode in colormap_modes.keys():
-            self.addPixmap(VectorPixmap(fileName,colormap=colormap_modes[mode]), mode)
+            pixmap = VectorPixmap(fileName, colormap=colormap_modes[mode])
+            self.addPixmap(pixmap, mode)
 
 
 ##############################################################################
-### Helpful widgets
+# Helpful widgets
 
 class VLineSeparator(QtWidgets.QFrame):
     """Vertical line separator"""
@@ -173,6 +178,7 @@ class VLineSeparator(QtWidgets.QFrame):
             border: none;
             margin: 4px;
             """)
+
 
 class ScalingImage(QtWidgets.QLabel):
     """Keep aspect ratio, width adjusts with height"""
@@ -203,8 +209,8 @@ class ScalingImage(QtWidgets.QLabel):
             return
         h = self.height()
         w = h * self._ratio
-        self.setPixmap(self._logo.scaled(w, h,
-            QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
+        self.setPixmap(self._logo.scaled(
+            w, h, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
 
     def minimumSizeHint(self):
         return QtCore.QSize(1, 1)
@@ -229,7 +235,7 @@ class ScalingImage(QtWidgets.QLabel):
 
 
 ##############################################################################
-### Taxotool Layout
+# Taxotool Layout
 
 class Header(QtWidgets.QFrame):
     """
@@ -259,7 +265,8 @@ class Header(QtWidgets.QFrame):
                 }
             """)
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Maximum)
 
         self.labelTitle = QtWidgets.QLabel('TITLE')
         self.labelTitle.setAlignment(QtCore.Qt.AlignBottom)
@@ -270,7 +277,6 @@ class Header(QtWidgets.QFrame):
             font-weight: bold;
             text-decoration: underline;
             """)
-            # letter-spacing: 1px;
 
         self.labelCitation = QtWidgets.QLabel('CITATION')
         self.labelCitation.setAlignment(QtCore.Qt.AlignBottom)
@@ -287,8 +293,6 @@ class Header(QtWidgets.QFrame):
             font-size: 12px;
             letter-spacing: 1px;
             """)
-            # letter-spacing: 1px;
-            # font-weight: bold;
 
         labels = QtWidgets.QGridLayout()
         labels.setRowStretch(0, 2)
@@ -299,7 +303,7 @@ class Header(QtWidgets.QFrame):
         labels.setColumnStretch(2, 1)
         labels.setHorizontalSpacing(4)
         labels.setVerticalSpacing(6)
-        labels.setContentsMargins(0,0,0,4)
+        labels.setContentsMargins(0, 0, 0, 4)
 
         self.labelLogoTool = QtWidgets.QLabel()
         self.labelLogoTool.setAlignment(QtCore.Qt.AlignCenter)
@@ -307,12 +311,13 @@ class Header(QtWidgets.QFrame):
         self.labelLogoProject = ScalingImage()
         layoutLogoProject = QtWidgets.QHBoxLayout()
         layoutLogoProject.addWidget(self.labelLogoProject)
-        layoutLogoProject.setContentsMargins(2,4,2,4)
+        layoutLogoProject.setContentsMargins(2, 4, 2, 4)
 
         self.toolbar = QtWidgets.QToolBar()
-        self.toolbar.setIconSize(QtCore.QSize(32,32))
+        self.toolbar.setIconSize(QtCore.QSize(32, 32))
         self.toolbar.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Minimum)
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Minimum)
         self.toolbar.setToolButtonStyle(
             QtCore.Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.toolbar.setStyleSheet("""
@@ -426,12 +431,14 @@ class Header(QtWidgets.QFrame):
     def logoProject(self, logo):
         self.labelLogoProject.logo = logo
 
+
 class Subheader(QtWidgets.QFrame):
     """A simple styled frame"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Maximum)
         self.setStyleSheet("""
             QFrame {
                 background-color: palette(Midlight);
@@ -440,6 +447,7 @@ class Subheader(QtWidgets.QFrame):
                 border-color: palette(Mid);
                 }
             """)
+
 
 class Panel(QtWidgets.QWidget):
     """
@@ -527,7 +535,6 @@ class Panel(QtWidgets.QWidget):
                 }
             """)
 
-
         layoutTop = QtWidgets.QHBoxLayout()
         layoutTop.addWidget(self.labelTitle, 1)
         layoutTop.addWidget(self.labelFlag, 0)
@@ -586,6 +593,7 @@ class Panel(QtWidgets.QWidget):
         self.labelFoot.setText(footer)
         self._foot = footer
 
+
 class ToolDialog(QtWidgets.QDialog):
     """
     For use as the main window of a tool.
@@ -600,7 +608,8 @@ class ToolDialog(QtWidgets.QDialog):
         msgBox.setWindowTitle(self.windowTitle())
         msgBox.setIcon(QtWidgets.QMessageBox.Question)
         msgBox.setText('Are you sure you want to quit?')
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        msgBox.setStandardButtons(
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         msgBox.setDefaultButton(QtWidgets.QMessageBox.Yes)
         confirm = self.msgShow(msgBox)
         if confirm == QtWidgets.QMessageBox.Yes:
