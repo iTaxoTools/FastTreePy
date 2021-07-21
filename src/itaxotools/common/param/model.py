@@ -140,3 +140,18 @@ class Model(QAbstractItemModel):
         keys = list(param._parent._children.keys())
         row = keys.index(param.key)
         return self.createIndex(row, 0, param)
+
+    def resetParams(self, index=QModelIndex()):
+        rows = self.rowCount(index)
+        if rows == 0:
+            return
+        for row in range(0, rows):
+            childIndex = self.index(row, 0, index)
+            childItem = childIndex.internalPointer()
+            if isinstance(childItem, Field):
+                childItem.value = childItem.default
+            self.resetParams(childIndex)
+        topLeft = self.index(0, 0, index)
+        bottomRight = self.index(rows - 1, 0, index)
+        roles = [Qt.ItemDataRole.DisplayRole, self.DataRole]
+        self.dataChanged.emit(topLeft, bottomRight, roles)

@@ -24,7 +24,7 @@ Parameter view for PySide6
 from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QRect, QSize
 from PySide6.QtWidgets import (
     QFrame, QLabel, QLineEdit, QCheckBox, QScrollArea, QMessageBox,
-    QComboBox, QGroupBox, QVBoxLayout, QHBoxLayout, QLayout)
+    QComboBox, QGroupBox, QVBoxLayout, QHBoxLayout, QLayout, QPushButton)
 from PySide6.QtGui import QValidator, QIntValidator, QDoubleValidator
 
 from . import Field
@@ -236,8 +236,9 @@ class View(QScrollArea):
     # Emited for every index when model data change
     dataChanged = Signal(object)
 
-    def __init__(self, model=None, parent=None):
+    def __init__(self, model=None, showResetButton=True, parent=None):
         super().__init__(parent)
+        self.showResetButton = showResetButton
         self._model = None
         self._rootIndex = QModelIndex()
         self._widgets = dict()
@@ -374,5 +375,15 @@ class View(QScrollArea):
             childIndex = self._model.index(row, 0, index)
             child = self._populate(childIndex, depth+1)
             layout.addWidget(child)
+
+        if self.showResetButton and depth == 0:
+            resetButton = QPushButton('Reset to defaults')
+            resetButton.setAutoDefault(False)
+            resetButton.clicked.connect(self._resetParams)
+            layout.addWidget(resetButton)
+
         widget.setLayout(layout)
         return widget
+
+    def _resetParams(self, checked=False):
+        self._model.resetParams()
