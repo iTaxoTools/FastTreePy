@@ -62,7 +62,7 @@ setup(
         where='src',
     ),
     ext_modules=[fasttree_module],
-    python_requires='>=3.9, <4',
+    python_requires='>=3.6, <4',
     install_requires=[
         'pyside6>=6.1.1',
         ],
@@ -85,6 +85,9 @@ setup(
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3 :: Only',
     ],

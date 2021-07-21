@@ -23,7 +23,6 @@ from PySide6 import QtWidgets
 from PySide6 import QtStateMachine
 from PySide6 import QtGui
 
-import importlib.resources
 import tempfile
 import pathlib
 import shutil
@@ -39,34 +38,23 @@ from itaxotools.common import io
 
 from .. import core
 
-# import os
+try:
+    import importlib.resources
+    _resource_path = importlib.resources.files(resources)
+    _package_path = importlib.resources.files(__package__)
+except Exception:
+    import os
+    _resource_path = pathlib.Path(
+        getattr(sys, '_MEIPASS', os.path.dirname(resources.__file__)))
+    _package_path = pathlib.Path(
+        getattr(sys, '_MEIPASS', os.path.dirname(__file__)))
 
-# def get_resource_path(module):
-#     try:
-#         path = importlib.resources.files(module)
-#         return path
-#     except Exception:
-#         path = getattr(sys, '_MEIPASS', os.path.dirname(module.__file__))
-#         print('>', path)
-#         return pathlib.Path(path)
-#
-# _resource_path = get_resource_path(resources)
-# def get_resource(path):
-#     return str(_resource_path / path)
-# def get_icon(path):
-#     return str(_resource_path / 'icons/svg' / path)
-# def get_about():
-#     path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
-#     print('!!!', path)
-#     return str(pathlib.Path(path) / 'about.html')
-
-_resource_path = importlib.resources.files(resources)
 def get_resource(path):
     return str(_resource_path / path)
 def get_icon(path):
     return str(_resource_path / 'icons/svg' / path)
 def get_about():
-    return str(importlib.resources.files(__package__) / 'about.html')
+    return str(_package_path / 'about.html')
 
 
 class RadioWidget(FieldWidget):
