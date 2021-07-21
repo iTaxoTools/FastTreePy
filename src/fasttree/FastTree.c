@@ -292,9 +292,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-// #include <sys/time.h>
 #include <ctype.h>
-// #include <unistd.h>
 #ifdef TRACK_MEMORY
 /* malloc.h apparently doesn't exist on MacOS */
 #include <malloc.h>
@@ -306,20 +304,35 @@
 #include "wrapio.h"
 #endif
 
-//#ifdef _WIN32
-typedef struct timeval {
-  long int tv_sec;
-  long int tv_usec;
-} timeval;
+#ifdef _WIN32
+#include <Windows.h>
+#include <stdint.h>
 
 int gettimeofday(struct timeval* t, char* timezone) {
-  t->tv_sec = 0;
-  t->tv_usec = 0;
-}
-//#endif
 
-/* Compile with -DOPENMP to turn on multithreading */
-#ifdef OPENMP
+  static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+
+  SYSTEMTIME  system_time;
+  FILETIME    file_time;
+  uint64_t    time;
+
+  GetSystemTime( &system_time );
+  SystemTimeToFileTime( &system_time, &file_time );
+  time =  ((uint64_t)file_time.dwLowDateTime )      ;
+  time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+  t->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+  t->tv_usec = (long) (system_time.wMilliseconds * 1000);
+  return 0;
+}
+
+#else
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+
+/* Compile with -DUSE_OPENMP to turn on multithreading */
+#ifdef USE_OPENMP
 #include <omp.h>
 #endif
 
@@ -825,7 +838,7 @@ typedef struct {
 
   int topvisibleAge;		/* joins since the top-visible list was recomputed */
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
   /* 1 lock to read or write any top hits list, no thread grabs more than one */
   omp_lock_t *locks;
 #endif
@@ -4649,7 +4662,7 @@ void SetBestHit(int node, NJ_t *NJ, int nActive,
   int j;
   besthit_t tmp;
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
   /* Note -- if we are already in a parallel region, this will be ignored */
   #pragma omp parallel for schedule(dynamic, 50)
 #endif
@@ -5673,19 +5686,19 @@ nni_t MLQuartetNNI(profile_t *profiles[4],
   QuartetConstraintPenalties(profiles, nConstraints, /*OUT*/penalty);
   if (penalty[ABvsCD] > penalty[ACvsBD] || penalty[ABvsCD] > penalty[ADvsBC])
     bFast = false;
-#ifdef OPENMP
+#ifdef USE_OPENMP
       bFast = false;		/* turn off star topology test */
 #endif
 
   for (iRound = 0; iRound < nRounds; iRound++) {
     bool bStarTest = false;
     {
-#ifdef OPENMP
+#ifdef USE_OPENMP
       #pragma omp parallel
       #pragma omp sections
 #endif
       {
-#ifdef OPENMP
+#ifdef USE_OPENMP
         #pragma omp section
 #endif
 	{
@@ -5697,7 +5710,7 @@ nni_t MLQuartetNNI(profile_t *profiles[4],
 	    - penalty[ABvsCD];	/* subtract penalty b/c we are trying to maximize log lk */
 	}
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
         #pragma omp section
 #else
 	if (bStarTest) {
@@ -5716,7 +5729,7 @@ nni_t MLQuartetNNI(profile_t *profiles[4],
 	      - penalty[ACvsBD];
 	}
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
         #pragma omp section
 #endif
 	{
@@ -7200,12 +7213,12 @@ void TestSplitsML(/*IN/OUT*/NJ_t *NJ, /*OUT*/SplitCount_t *splitcount, int nBoot
     double lenADvsBC[5] = {len[LEN_A], len[LEN_D], len[LEN_C], len[LEN_B], len[LEN_I]};   /* Swap B & D */
 
     {
-#ifdef OPENMP
+#ifdef USE_OPENMP
       #pragma omp parallel
       #pragma omp sections
 #endif
       {
-#ifdef OPENMP
+#ifdef USE_OPENMP
       #pragma omp section
 #endif
 	{
@@ -7215,7 +7228,7 @@ void TestSplitsML(/*IN/OUT*/NJ_t *NJ, /*OUT*/SplitCount_t *splitcount, int nBoot
 					 /*OUT*/site_likelihoods[ABvsCD]);
 	}
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
       #pragma omp section
 #endif
 	{
@@ -7224,7 +7237,7 @@ void TestSplitsML(/*IN/OUT*/NJ_t *NJ, /*OUT*/SplitCount_t *splitcount, int nBoot
 					    /*OUT*/site_likelihoods[ACvsBD]);
 	}
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
       #pragma omp section
 #endif
 	{
@@ -7685,7 +7698,7 @@ top_hits_t *FreeTopHits(top_hits_t *tophits) {
   tophits->top_hits_lists = myfree(tophits->top_hits_lists, sizeof(top_hits_list_t) * tophits->maxnodes);
   tophits->visible = myfree(tophits->visible, sizeof(hit_t*) * tophits->maxnodes);
   tophits->topvisible = myfree(tophits->topvisible, sizeof(int) * tophits->nTopVisible);
-#ifdef OPENMP
+#ifdef USE_OPENMP
   for (iNode = 0; iNode < tophits->maxnodes; iNode++)
     omp_destroy_lock(&tophits->locks[iNode]);
   tophits->locks = myfree(tophits->locks, sizeof(omp_lock_t) * tophits->maxnodes);
@@ -7706,7 +7719,7 @@ top_hits_t *InitTopHits(NJ_t *NJ, int m) {
   tophits->visible = mymalloc(sizeof(hit_t) * tophits->maxnodes);
   tophits->nTopVisible = (int)(0.5 + topvisibleMult*m);
   tophits->topvisible = mymalloc(sizeof(int) * tophits->nTopVisible);
-#ifdef OPENMP
+#ifdef USE_OPENMP
   tophits->locks = mymalloc(sizeof(omp_lock_t) * tophits->maxnodes);
   for (iNode = 0; iNode < tophits->maxnodes; iNode++)
     omp_init_lock(&tophits->locks[iNode]);
@@ -7776,13 +7789,13 @@ void SetAllLeafTopHits(/*IN/UPDATE*/NJ_t *NJ, /*IN/OUT*/top_hits_t *tophits) {
   assert(2 * tophits->m <= NJ->nSeq);
   int iSeed;
   int nHasTopHits = 0;
-#ifdef OPENMP
+#ifdef USE_OPENMP
   #pragma omp parallel for schedule(dynamic, 50)
 #endif
   for(iSeed=0; iSeed < NJ->nSeq; iSeed++) {
     int seed = seeds[iSeed];
     if (iSeed > 0 && (iSeed % 100) == 0) {
-#ifdef OPENMP
+#ifdef USE_OPENMP
       #pragma omp critical
 #endif
       ProgressReport("Top hits for %6d of %6d seqs (at seed %6d)",
@@ -8095,7 +8108,7 @@ besthit_t *UniqueBestHits(/*IN/UPDATE*/NJ_t *NJ, int nActive,
   *nUniqueOut = nUnique;
 
   /* Then do any updates to the criterion or the distances in parallel */
-#ifdef OPENMP
+#ifdef USE_OPENMP
     #pragma omp parallel for schedule(dynamic, 50)
 #endif
   for (iHit = 0; iHit < nUnique; iHit++) {
@@ -8265,7 +8278,7 @@ void TopHitJoin(int newnode,
     /* ensure all out-distances are up to date ahead of time
        to avoid any data overwriting issues.
     */
-#ifdef OPENMP
+#ifdef USE_OPENMP
     #pragma omp parallel for schedule(dynamic, 50)
 #endif
     for (iNode = 0; iNode < NJ->maxnode; iNode++) {
@@ -8295,7 +8308,7 @@ void TopHitJoin(int newnode,
 
     /* And use the top 2*m entries to expand other best-hit lists, but only for top m */
     int iHit;
-#ifdef OPENMP
+#ifdef USE_OPENMP
     #pragma omp parallel for schedule(dynamic, 50)
 #endif
     for (iHit=0; iHit < tophits->m; iHit++) {
@@ -8687,7 +8700,7 @@ void SortSaveBestHits(int iNode, /*IN/SORT*/besthit_t *besthits,
 
   assert(nSave > 0);
 
-#ifdef OPENMP
+#ifdef USE_OPENMP
   omp_set_lock(&tophits->locks[iNode]);
 #endif
   if (l->hits != NULL) {
@@ -8707,7 +8720,7 @@ void SortSaveBestHits(int iNode, /*IN/SORT*/besthit_t *besthits,
       jLast = j;
     }
   }
-#ifdef OPENMP
+#ifdef USE_OPENMP
   omp_unset_lock(&tophits->locks[iNode]);
 #endif
   assert(iSave == nSave);
@@ -8777,12 +8790,12 @@ besthit_t HitToBestHit(int i, hit_t hit) {
 }
 
 char *OpenMPString(void) {
-#ifdef OPENMP
+#ifdef USE_OPENMP
   static char buf[100];
   sprintf(buf, ", OpenMP (%d threads)", omp_get_max_threads());
   return(buf);
 #else
-  return("");
+  return(", OpenMP OFF");
 #endif
 }
 

@@ -1,17 +1,38 @@
 """The setup module for FastTreePy"""
 
 # Always prefer setuptools over distutils
-from setuptools import setup, Extension, find_namespace_packages
+from setuptools import setup, Command, Extension, find_namespace_packages
+from setuptools.command.build_ext import build_ext as _build_ext
 import pathlib
+
+class build_ext(_build_ext):
+    """Overrides setuptools build_ext to execute build_init commands"""
+    def build_extensions(self):
+        for ext in self.extensions:
+            if hasattr(ext, 'build_init'):
+                ext.build_init(self)
+        _build_ext.build_extensions(self)
+
+class FastTreeExtension(Extension):
+    """Extension subclass that defines build_init"""
+    pass
+    def build_init(self, build):
+        """Called by build_ext to compile and include pthread-win32 if needed"""
+        if build.compiler.compiler_type == 'msvc':
+            self.extra_compile_args += ['/openmp']
 
 # * gcc -Wall -O3 -finline-functions -funroll-loops -o FastTree -lm FastTree.c
 fasttree_source = 'src/fasttree'
-fasttree_module = Extension(
+fasttree_module = FastTreeExtension(
     'itaxotools.fasttreepy.fasttree',
     include_dirs=[fasttree_source],
     define_macros=[
-        ('ismodule', '1')
+        ('ismodule', '1'),
+        ('USE_DOUBLE', '1'),
+        ('USE_OPENMP', '1'),
+        # ('USE_SSE3', '1'),
         ],
+    extra_compile_args=[],
     library_dirs=[],
     libraries=[],
     sources=[
@@ -57,6 +78,9 @@ setup(
           'hook-dirs = itaxotools.__pyinstaller:get_hook_dirs',
           'tests = itaxotools.__pyinstaller:get_PyInstaller_tests'
         ]
+    },
+    cmdclass = {
+        'build_ext': build_ext,
     },
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',

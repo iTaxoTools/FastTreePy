@@ -255,6 +255,7 @@ class Main(widgets.ToolDialog):
         state.assignProperty(self.action['run'], 'visible', True)
         state.assignProperty(self.action['stop'], 'visible', False)
         state.assignProperty(self.action['open'], 'enabled', True)
+        state.assignProperty(self.pane['params'], 'enabled', True)
 
         state = self.state['idle/input.none']
         state.assignProperty(self.action['run'], 'enabled', False)
@@ -291,6 +292,7 @@ class Main(widgets.ToolDialog):
         state.assignProperty(self.action['stop'], 'visible', True)
         state.assignProperty(self.action['open'], 'enabled', False)
         state.assignProperty(self.action['save'], 'enabled', False)
+        state.assignProperty(self.pane['params'], 'enabled', False)
         tip = 'Generating tree, please wait...'
         state.assignProperty(self.footer, 'text', tip)
 
@@ -530,7 +532,8 @@ class Main(widgets.ToolDialog):
 
         self.textAbout = QtWidgets.QTextBrowser()
         self.textAbout.setOpenExternalLinks(True)
-        self.textAbout.setSource(get_about())
+        with open(get_about()) as about:
+            self.textAbout.setHtml(about.read())
         self.textAbout.document().setDocumentMargin(10)
 
         self.pane['about'] = widgets.Panel(self)
