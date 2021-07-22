@@ -100,7 +100,6 @@ int _vfprintf ( FILE *stream, const char *format, va_list args ) {
 
  if ((_module) && (attr[0] != '\0')) {
 
-   PyObject *dict = NULL;
    PyObject *file = NULL;
 
    va_list temp;
@@ -241,6 +240,12 @@ int _fflush ( FILE * stream ) {
  return done;
 }
 
+void _wrapio_exit(int status) {
+ _fflush(stdout);
+ _fflush(stderr);
+ exit(status);
+}
+
 int wrapio_init ( PyObject *m ) {
 /*
 * Add redirection attributes to module and allocate the buffer.
@@ -291,10 +296,4 @@ finally:
  Py_XDECREF(dict);
  Py_XDECREF(sys);
  return done;
-}
-
-void __exit(int status) {
- _fflush(stdout);
- _fflush(stderr);
- exit(status);
 }

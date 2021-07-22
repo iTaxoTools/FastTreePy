@@ -5,6 +5,7 @@ from setuptools import setup, Command, Extension, find_namespace_packages
 from setuptools.command.build_ext import build_ext as _build_ext
 import pathlib
 
+
 class build_ext(_build_ext):
     """Overrides setuptools build_ext to execute build_init commands"""
     def build_extensions(self):
@@ -13,13 +14,19 @@ class build_ext(_build_ext):
                 ext.build_init(self)
         _build_ext.build_extensions(self)
 
+
 class FastTreeExtension(Extension):
     """Extension subclass that defines build_init"""
     pass
     def build_init(self, build):
-        """Called by build_ext to compile and include pthread-win32 if needed"""
+        """Called by build_ext to link openmp"""
         if build.compiler.compiler_type == 'msvc':
             self.extra_compile_args += ['/openmp']
+        else:
+            self.extra_compile_args += [
+                '-fopenmp', '-finline-functions', '-funroll-loops']
+            self.libraries += ['m', 'gomp']
+
 
 # * gcc -Wall -O3 -finline-functions -funroll-loops -o FastTree -lm FastTree.c
 fasttree_source = 'src/fasttree'

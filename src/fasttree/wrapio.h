@@ -35,6 +35,8 @@ int _puts ( const char * str );
 
 int _fflush ( FILE * stream );
 
+void _wrapio_exit ( int status );
+
 // size_t fwrite ( const void * ptr, size_t size, size_t count, FILE * stream );
 // int feof ( FILE * stream );
 
@@ -50,7 +52,7 @@ int _fflush ( FILE * stream );
 
 #define fflush _fflush
 
-#define exit __exit
+#define exit _wrapio_exit
 
 // FOR READ ONLY
 // void rewind ( FILE * stream );

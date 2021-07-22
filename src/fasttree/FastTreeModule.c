@@ -87,9 +87,9 @@ int parseItem(PyObject *dict, const char *str, const char t, void *var) {
 				PyErr_Format(PyExc_TypeError, "parseItem: Expected string value for key '%s'", str);
 				return -1;
 			}
-			const char *bytes = PyBytes_AS_STRING(value);
-			*(const char **)var = malloc(strlen (bytes) + 1);
-			strcpy(*(const char **)var, bytes);
+			char *bytes = PyBytes_AS_STRING(value);
+			*(char **)var = malloc(strlen (bytes) + 1);
+			strcpy(*(char **)var, bytes);
 			Py_XDECREF(value);
 			break;
 		default:
@@ -318,9 +318,9 @@ fasttree_raw(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef FastTreeMethods[] = {
-  {"main",  fasttree_main, METH_VARARGS | METH_KEYWORDS,
+  {"main", (PyCFunction) fasttree_main, METH_VARARGS | METH_KEYWORDS,
    "Run fasttree with given parameters."},
-  {"raw",  fasttree_raw, METH_VARARGS,
+  {"raw", (PyCFunction) fasttree_raw, METH_VARARGS,
    "Run fasttree on given argv."},
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
