@@ -43,11 +43,15 @@ try:
     _resource_path = importlib.resources.files(resources)
     _package_path = importlib.resources.files(__package__)
 except Exception:
-    import os
-    _resource_path = pathlib.Path(
-        getattr(sys, '_MEIPASS', os.path.dirname(resources.__file__)))
-    _package_path = pathlib.Path(
-        getattr(sys, '_MEIPASS', os.path.dirname(__file__)))
+    if hasattr(sys, '_MEIPASS'):
+        _resource_path = (pathlib.Path(sys._MEIPASS) /
+            'itaxotools' / 'common' / 'resources')
+        _package_path = (pathlib.Path(sys._MEIPASS) /
+            'itaxotools' / 'fasttreepy' / 'gui')
+    else:
+        import os
+        _resource_path = pathlib.Path(os.path.dirname(resources.__file__))
+        _package_path = pathlib.Path(os.path.dirname(__file__))
 
 def get_resource(path):
     return str(_resource_path / path)

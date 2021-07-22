@@ -3,7 +3,7 @@
 block_cipher = None
 
 # Could also use pyinstaller's Entrypoint()
-a = Analysis(['fasttree.py'],
+a = Analysis(['fasttreepy.py'],
              binaries=[],
              datas=[],
              hiddenimports=[],
