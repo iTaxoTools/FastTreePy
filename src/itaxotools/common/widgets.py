@@ -487,8 +487,8 @@ class Panel(QtWidgets.QWidget):
                 }
             QLabel:disabled {
                 background: palette(Mid);
-                border-right: 1px solid palette(Midlight);
-                border-bottom: 2px solid palette(Midlight);
+                border-right: 1px solid palette(Mid);
+                border-bottom: 2px solid palette(Mid);
                 }
             """)
 

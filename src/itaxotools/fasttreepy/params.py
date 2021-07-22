@@ -7,7 +7,8 @@ params = Group(key='root', children=[
                 Field(key='ncodes',
                       label='Alignment type',
                       doc=("Selecting the correct alignment type for your\n"
-                           "input improves performance."),
+                           "input improves performance. Affects available\n"
+                           "ML models."),
                       type=int,
                       list={4: 'Nucleotide alignment',
                             20: 'Protein alignment'},
