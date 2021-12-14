@@ -9,8 +9,6 @@ include LICENSE.txt
 # Include setup.py
 include setup.py
 
-# Recursively include all common resources
-recursive-include src/itaxotools/**/resources *
-
 # Include data files
+recursive-include src/itaxotools/fasttreepy/gui/logos *
 include src/itaxotools/fasttreepy/gui/about.html

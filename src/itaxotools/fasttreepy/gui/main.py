@@ -26,39 +26,39 @@ from PySide6 import QtGui
 import tempfile
 import pathlib
 import shutil
+import enum
 import sys
 
 from itaxotools.common.param.model import Model
 from itaxotools.common.param.view import View, ListWidget, FieldWidget
 
-from itaxotools.common import utility
+from itaxotools import common
+from itaxotools.common import threading
 from itaxotools.common import widgets
 from itaxotools.common import resources
+from itaxotools.common import machine
 from itaxotools.common import io
 
 from .. import core
 
-try:
-    import importlib.resources
-    _resource_path = importlib.resources.files(resources)
-    _package_path = importlib.resources.files(__package__)
-except Exception:
-    if hasattr(sys, '_MEIPASS'):
-        _resource_path = (pathlib.Path(sys._MEIPASS) /
-            'itaxotools' / 'common' / 'resources')
-        _package_path = (pathlib.Path(sys._MEIPASS) /
-            'itaxotools' / 'fasttreepy' / 'gui')
-    else:
-        import os
-        _resource_path = pathlib.Path(os.path.dirname(resources.__file__))
-        _package_path = pathlib.Path(os.path.dirname(__file__))
 
 def get_resource(path):
-    return str(_resource_path / path)
+    # return str(_resource_path / path)
+    return common.resources.get('itaxotools.fasttreepy.gui', path)
 def get_icon(path):
-    return str(_resource_path / 'icons/svg' / path)
+    return common.resources.get_common(pathlib.Path('icons/svg') / path)
 def get_about():
-    return str(_package_path / 'about.html')
+    # return str(_package_path / 'about.html')
+    return common.resources.get('itaxotools.fasttreepy.gui', 'about.html')
+
+
+class Action(enum.Enum):
+    Update = enum.auto()
+    Open = enum.auto()
+    Done = enum.auto()
+    Fail = enum.auto()
+    Run = enum.auto()
+    Cancel = enum.auto()
 
 
 class RadioWidget(FieldWidget):
@@ -139,7 +139,7 @@ class ModelListWidget(ListWidget):
             self.dataChanged.emit(self._index, v)
 
 
-class TextEditLogger(widgets.TextEditLogger):
+class TextEditLogger(common.widgets.TextEditLogger):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setStyleSheet("""
@@ -150,8 +150,205 @@ class TextEditLogger(widgets.TextEditLogger):
             """)
 
 
-class Main(widgets.ToolDialog):
+class Header(QtWidgets.QFrame):
+    """
+    The Taxotools toolbar, with space for a title, description,
+    citations and two logos.
+    """
+    def __init__(self):
+        """ """
+        super().__init__()
+
+        self._title = None
+        self._description = None
+        self._citation = None
+        self._logoTool = None
+
+        self.logoSize = 64
+
+        self.draw()
+
+    def draw(self):
+        """ """
+        self.setStyleSheet("""
+            Header {
+                background: palette(Light);
+                border-top: 2px solid palette(Mid);
+                border-bottom: 1px solid palette(Dark);
+                }
+            """)
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Maximum)
+
+        self.labelTitle = QtWidgets.QLabel('TITLE')
+        self.labelTitle.setAlignment(QtCore.Qt.AlignBottom)
+        self.labelTitle.setStyleSheet("""
+            color: palette(Text);
+            font-size: 14px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-decoration: underline;
+            """)
+
+        self.labelCitation = QtWidgets.QLabel('CITATION')
+        self.labelCitation.setAlignment(QtCore.Qt.AlignBottom)
+        self.labelCitation.setStyleSheet("""
+            color: palette(Shadow);
+            font-size: 12px;
+            font-style: italic;
+            """)
+
+        self.labelDescription = QtWidgets.QLabel('DESCRIPTION')
+        self.labelDescription.setAlignment(QtCore.Qt.AlignTop)
+        self.labelDescription.setStyleSheet("""
+            color: palette(Text);
+            font-size: 12px;
+            letter-spacing: 1px;
+            """)
+
+        labels = QtWidgets.QGridLayout()
+        labels.setRowStretch(0, 2)
+        labels.addWidget(self.labelTitle, 1, 0)
+        labels.addWidget(self.labelCitation, 1, 1)
+        labels.addWidget(self.labelDescription, 2, 0, 1, 3)
+        labels.setRowStretch(3, 2)
+        labels.setColumnStretch(2, 1)
+        labels.setHorizontalSpacing(4)
+        labels.setVerticalSpacing(6)
+        labels.setContentsMargins(0, 0, 0, 4)
+
+        self.labelLogoTool = QtWidgets.QLabel()
+        self.labelLogoTool.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.labelLogoProject = common.widgets.ScalingImage()
+        layoutLogoProject = QtWidgets.QHBoxLayout()
+        layoutLogoProject.addWidget(self.labelLogoProject)
+        layoutLogoProject.setContentsMargins(2, 4, 2, 4)
+
+        self.toolbar = QtWidgets.QToolBar()
+        self.toolbar.setIconSize(QtCore.QSize(32, 32))
+        self.toolbar.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Minimum)
+        self.toolbar.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.toolbar.setStyleSheet("""
+            QToolBar {
+                spacing: 2px;
+                }
+            QToolButton {
+                color: palette(ButtonText);
+                background: transparent;
+                border: 2px solid transparent;
+                border-radius: 3px;
+                font-size: 14px;
+                min-width: 50px;
+                min-height: 60px;
+                padding: 6px 0px 0px 0px;
+                margin: 4px 0px 4px 0px;
+                }
+            QToolButton:hover {
+                background: palette(Window);
+                border: 2px solid transparent;
+                }
+            QToolButton:pressed {
+                background: palette(Midlight);
+                border: 2px solid palette(Mid);
+                border-radius: 3px;
+                }
+            QToolButton[popupMode="2"]:pressed {
+                padding-bottom: 5px;
+                border: 1px solid palette(Dark);
+                margin: 5px 1px 0px 1px;
+                border-bottom-right-radius: 0px;
+                border-bottom-left-radius: 0px;
+                }
+            QToolButton::menu-indicator {
+                image: none;
+                width: 30px;
+                border-bottom: 2px solid palette(Mid);
+                subcontrol-origin: padding;
+                subcontrol-position: bottom;
+                }
+            QToolButton::menu-indicator:disabled {
+                border-bottom: 2px solid palette(Midlight);
+                }
+            QToolButton::menu-indicator:pressed {
+                border-bottom: 0px;
+                }
+            """)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addSpacing(8)
+        layout.addWidget(self.labelLogoTool)
+        layout.addSpacing(6)
+        layout.addWidget(common.widgets.VLineSeparator())
+        layout.addSpacing(12)
+        layout.addLayout(labels, 0)
+        layout.addSpacing(12)
+        layout.addWidget(common.widgets.VLineSeparator())
+        layout.addSpacing(8)
+        layout.addWidget(self.toolbar, 0)
+        layout.addStretch(1)
+        layout.addWidget(common.widgets.VLineSeparator())
+        layout.addLayout(layoutLogoProject, 0)
+        # layout.addWidget(self.labelLogoProject)
+        layout.addSpacing(2)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setLayout(layout)
+
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, title):
+        self.labelTitle.setText(title)
+        self._title = title
+
+    @property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, description):
+        self.labelDescription.setText(description)
+        self._description = description
+
+    @property
+    def citation(self):
+        return self._citation
+
+    @citation.setter
+    def citation(self, citation):
+        self.labelCitation.setText(citation)
+        self._citation = citation
+
+    @property
+    def logoTool(self):
+        return self._logoTool
+
+    @logoTool.setter
+    def logoTool(self, logo):
+        self.labelLogoTool.setPixmap(logo)
+        self._logoTool = logo
+
+    @property
+    def logoProject(self):
+        return self.labelLogoProject.logo
+
+    @logoProject.setter
+    def logoProject(self, logo):
+        self.labelLogoProject.logo = logo
+
+
+class Main(common.widgets.ToolDialog):
     """Main window, handles everything"""
+
+    actionSignal = QtCore.Signal(Action, list, dict)
 
     def __init__(self, parent=None, init=None):
         super(Main, self).__init__(parent)
@@ -163,7 +360,7 @@ class Main(widgets.ToolDialog):
         self.temp = None
 
         self.setWindowTitle(self.title)
-        self.setWindowIcon(QtGui.QIcon(get_resource('logos/ico/fasttree.ico')))
+        self.setWindowIcon(QtGui.QIcon(get_resource('logos/fasttree.ico')))
         self.resize(840, 540)
 
         self.process = None
@@ -183,6 +380,12 @@ class Main(widgets.ToolDialog):
 
     def __setstate__(self, state):
         (self.analysis,) = state
+
+    def postAction(self, action, *args, **kwargs):
+        self.actionSignal.emit(action, args, kwargs)
+
+    def taggedTransition(self, action):
+        return common.machine.TaggedTransition(self.actionSignal, action)
 
     def dragEnterEvent(self, event):
         """Accept single file drops as long as state is idle"""
@@ -290,14 +493,15 @@ class Main(widgets.ToolDialog):
 
         internal = QtStateMachine.QAbstractTransition.TransitionType.InternalTransition
 
-        transition = utility.NamedTransition('UPDATE')
+        transition = self.taggedTransition(Action.Update)
         transition.setTransitionType(internal)
         transition.setTargetState(self.state['idle/output.outdated'])
         self.state['idle/output.complete'].addTransition(transition)
 
-        transition = utility.NamedTransition('OPEN')
+        transition = self.taggedTransition(Action.Open)
         transition.setTransitionType(internal)
         def onTransition(event):
+            event = common.machine.TaggedEvent(event)
             self.subheader.file.setText(event.kwargs['file'])
             fileInfo = QtCore.QFileInfo(event.kwargs['file'])
             fileName = fileInfo.fileName()
@@ -311,11 +515,11 @@ class Main(widgets.ToolDialog):
             ])
         self.state['idle'].addTransition(transition)
 
-        transition = utility.NamedTransition('RUN')
+        transition = self.taggedTransition(Action.Run)
         transition.setTargetState(self.state['running'])
         self.state['idle'].addTransition(transition)
 
-        transition = utility.NamedTransition('DONE')
+        transition = self.taggedTransition(Action.Done)
         def onTransition(event):
             msgBox = QtWidgets.QMessageBox(self)
             msgBox.setWindowTitle(self.windowTitle())
@@ -331,7 +535,7 @@ class Main(widgets.ToolDialog):
             ])
         self.state['running'].addTransition(transition)
 
-        transition = utility.NamedTransition('FAIL')
+        transition = self.taggedTransition(Action.Fail)
         def onTransition(event):
             self.fail(event.args[0])
         transition.onTransition = onTransition
@@ -341,7 +545,7 @@ class Main(widgets.ToolDialog):
             ])
         self.state['running'].addTransition(transition)
 
-        transition = utility.NamedTransition('CANCEL')
+        transition = self.taggedTransition(Action.Cancel)
         transition.setTargetStates([
             self.state['idle/input.last'],
             self.state['idle/output.last'],
@@ -424,11 +628,11 @@ class Main(widgets.ToolDialog):
         QtGui.QGuiApplication.setPalette(palette)
 
         self.colormap = {
-            widgets.VectorIcon.Normal: {
+            common.widgets.VectorIcon.Normal: {
                 '#000': color['black'],
                 '#f00': color['red'],
                 },
-            widgets.VectorIcon.Disabled: {
+            common.widgets.VectorIcon.Disabled: {
                 '#000': color['gray'],
                 '#f00': color['orange'],
                 },
@@ -447,12 +651,12 @@ class Main(widgets.ToolDialog):
     def draw(self):
         """Draw all widgets"""
 
-        self.header = widgets.Header()
-        self.header.logoTool = widgets.VectorPixmap(
-            get_resource('logos/svg/fasttree.svg'),
+        self.header = Header()
+        self.header.logoTool = common.widgets.VectorPixmap(
+            get_resource('logos/fasttree.svg'),
             colormap=self.colormap_icon)
         self.header.logoProject = QtGui.QPixmap(
-            get_resource('logos/png/itaxotools-micrologo.png'))
+            get_resource('logos/itaxotools-micrologo.png'))
         self.header.title = 'FastTree'
         self.header.citation = (
             'by M.N. Price, P.S. Dehal and A.P. Arkin'
@@ -462,12 +666,12 @@ class Main(widgets.ToolDialog):
             'for large multiple sequence alignments'
         )
 
-        self.subheader = widgets.Subheader()
+        self.subheader = common.widgets.Subheader()
         self.subheader.setStyleSheet(self.subheader.styleSheet() +
             """QRadioButton {padding-right: 12px; padding-top: 2px;}""")
 
         self.subheader.icon = QtWidgets.QLabel()
-        self.subheader.icon.setPixmap(widgets.VectorPixmap(
+        self.subheader.icon.setPixmap(common.widgets.VectorPixmap(
             get_icon('arrow-right.svg'),
             colormap=self.colormap_icon_light))
         self.subheader.icon.setStyleSheet('border-style: none;')
@@ -506,7 +710,7 @@ class Main(widgets.ToolDialog):
         self.paramView.addCustomParamWidget(
             self.analysis.param.model.ml_model, ModelListWidget)
 
-        self.pane['params'] = widgets.Panel(self)
+        self.pane['params'] = common.widgets.Panel(self)
         self.pane['params'].title = 'Parameters'
         self.pane['params'].footer = ''
         self.pane['params'].body.addWidget(self.paramView)
@@ -514,9 +718,9 @@ class Main(widgets.ToolDialog):
 
         self.textLogger = TextEditLogger()
         self.textLogger.document().setDocumentMargin(10)
-        self.textLogIO = io.TextEditLoggerIO(self.textLogger)
+        self.textLogIO = common.io.TextEditLoggerIO(self.textLogger)
 
-        self.pane['output'] = widgets.Panel(self)
+        self.pane['output'] = common.widgets.Panel(self)
         self.pane['output'].title = 'Progress Log'
         self.pane['output'].footer = ''
         self.pane['output'].body.addWidget(self.textLogger)
@@ -528,7 +732,7 @@ class Main(widgets.ToolDialog):
             self.textAbout.setHtml(about.read())
         self.textAbout.document().setDocumentMargin(10)
 
-        self.pane['about'] = widgets.Panel(self)
+        self.pane['about'] = common.widgets.Panel(self)
         self.pane['about'].title = 'About'
         self.pane['about'].footer = ''
         self.pane['about'].body.addWidget(self.textAbout)
@@ -575,25 +779,25 @@ class Main(widgets.ToolDialog):
         self.action = {}
 
         self.action['open'] = QtGui.QAction('&Open', self)
-        self.action['open'].setIcon(widgets.VectorIcon(get_icon('open.svg'), self.colormap))
+        self.action['open'].setIcon(common.widgets.VectorIcon(get_icon('open.svg'), self.colormap))
         self.action['open'].setShortcut(QtGui.QKeySequence.Open)
         self.action['open'].setStatusTip('Open an existing file')
         self.action['open'].triggered.connect(self.handleOpen)
 
         self.action['save'] = QtGui.QAction('&Save', self)
-        self.action['save'].setIcon(widgets.VectorIcon(get_icon('save.svg'), self.colormap))
+        self.action['save'].setIcon(common.widgets.VectorIcon(get_icon('save.svg'), self.colormap))
         self.action['save'].setShortcut(QtGui.QKeySequence.Save)
         self.action['save'].setStatusTip('Save results')
         self.action['save'].triggered.connect(self.handleSave)
 
         self.action['run'] = QtGui.QAction('&Run', self)
-        self.action['run'].setIcon(widgets.VectorIcon(get_icon('run.svg'), self.colormap))
+        self.action['run'].setIcon(common.widgets.VectorIcon(get_icon('run.svg'), self.colormap))
         self.action['run'].setShortcut('Ctrl+R')
         self.action['run'].setStatusTip('Align sequences')
         self.action['run'].triggered.connect(self.handleRun)
 
         self.action['stop'] = QtGui.QAction('&Stop', self)
-        self.action['stop'].setIcon(widgets.VectorIcon(get_icon('stop.svg'), self.colormap))
+        self.action['stop'].setIcon(common.widgets.VectorIcon(get_icon('stop.svg'), self.colormap))
         self.action['stop'].setStatusTip('Cancel alignment')
         self.action['stop'].triggered.connect(self.handleStop)
 
@@ -605,10 +809,10 @@ class Main(widgets.ToolDialog):
     def handleDataChanged(self):
         """Update output state on param update"""
         if self.machine is not None:
-            self.machine.postEvent(utility.NamedEvent('UPDATE'))
+            self.postAction(Action.Update)
 
     def handleRunWork(self):
-        """Runs on the UProcess, defined here for pickability"""
+        """Runs on the Process, defined here for pickability"""
         self.analysis.log = sys.stdout
         self.analysis.run()
         return self.analysis.results
@@ -630,26 +834,26 @@ class Main(widgets.ToolDialog):
             with open(self.analysis.fetch()) as output:
                 self.textLogger.append(
                     f'\n> Resulting tree: \n\n{output.read()}\n')
-            self.machine.postEvent(utility.NamedEvent('DONE', True))
+            self.postAction(Action.Done, True)
 
         def fail(exception):
-            self.machine.postEvent(utility.NamedEvent('FAIL', exception))
+            self.postAction(Action.Fail, exception)
 
         def error(exitcode):
             self.textLogger.append(
                 f'> Internal error: exited with code: {exitcode}\n\n')
             exception = RuntimeError(
                 f'Subprocess exited with error code {exitcode}')
-            self.machine.postEvent(utility.NamedEvent('FAIL', exception))
+            self.postAction(Action.Fail, exception)
 
-        self.process = utility.UProcess(self.handleRunWork)
+        self.process = common.threading.Process(self.handleRunWork)
         self.process.done.connect(done)
         self.process.fail.connect(fail)
         self.process.error.connect(error)
         self.process.setStream(self.textLogIO)
         self.process.start()
 
-        self.machine.postEvent(utility.NamedEvent('RUN'))
+        self.postAction(Action.Run)
 
     def handleStop(self):
         """Called by cancel button"""
@@ -664,7 +868,7 @@ class Main(widgets.ToolDialog):
             if self.process is not None:
                 self.process.quit()
             self.textLogger.append('\n> Interrupted by user\n\n')
-            self.machine.postEvent(utility.NamedEvent('CANCEL'))
+            self.postAction(Action.Cancel)
 
     def handleOpen(self, checked=False, fileName=None):
         """Called by toolbar action"""
@@ -678,7 +882,7 @@ class Main(widgets.ToolDialog):
             return
         self.textLogger.clear()
         self.textLogger.append(f'> Now working on file: {fileName}\n\n')
-        self.machine.postEvent(utility.NamedEvent('OPEN', file=fileName))
+        self.postAction(Action.Open, file=fileName)
         self.file = fileName
 
     def handleSave(self):

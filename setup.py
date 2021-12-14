@@ -56,7 +56,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='fasttreepy',
-    version='0.1.0',
+    version='0.1.dev1',
     description='A Python wrapper for FastTree',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -64,27 +64,23 @@ setup(
     author_email='stefanpatman91@gmail.com',
     package_dir={'': 'src'},
     packages=find_namespace_packages(
-        # exclude=('itaxotools.common*',),
         include=('itaxotools*',),
         where='src',
     ),
     ext_modules=[fasttree_module],
-    python_requires='>=3.6, <4',
+    python_requires='>=3.8.6, <4',
     install_requires=[
-        'pyside6>=6.1.1',
+        'pyside6>=6.1.1, <6.2.0',
+        'itaxotools-common==0.2.2',
         ],
     extras_require={
-        'dev': ['pyinstaller==5.0.dev0'],
+        'dev': ['pyinstaller>=4.5.1'],
     },
     entry_points={
         'console_scripts': [
             'fasttreepy = itaxotools.fasttreepy:main',
-            'fasttreepy-qt = itaxotools.fasttreepy.gui:main',
+            'fasttreepy-gui = itaxotools.fasttreepy.gui:main',
         ],
-        'pyinstaller40': [
-          'hook-dirs = itaxotools.__pyinstaller:get_hook_dirs',
-          'tests = itaxotools.__pyinstaller:get_PyInstaller_tests'
-        ]
     },
     cmdclass = {
         'build_ext': build_ext,
@@ -92,8 +88,6 @@ setup(
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3 :: Only',
