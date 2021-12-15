@@ -83,9 +83,17 @@ params = Group(key='root', children=[
                    "nearest-neighbor interchanges. If set to -1,\n"
                    "do 2*log(N) rounds, where N is the number of\n"
                    "unique sequences (default). If set to 0, turn off\n"
-                   "both min-evo NNIs and SPRs"),
+                   "both min-evo NNIs and SPRs."),
               type=int,
               default=-1),
+        Field(key='support',
+              label='Compute local support',
+              doc=("The local support values are given as names\n"
+                   "for the internal nodes, and range from 0 to 1.\n"
+                   "The Shimodaira Hasegawa test is used by default,\n"
+                   "or minimum-evolution bootstrap if ML-NNI = 0."),
+              type=bool,
+              default=True),
         Field(key='exhaustive',
               label='Exhaustive NNIs',
               doc=("Turn off heuristics to avoid constant subtrees\n"
@@ -94,5 +102,5 @@ params = Group(key='root', children=[
                    "in 2 rounds."),
               type=bool,
               default=False),
-        ])
+        ]),
     ])

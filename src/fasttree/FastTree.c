@@ -854,6 +854,8 @@ int nDefaultRateCats = 20;
 int nRateCats = 20;
 int spr = 2;			/* number of rounds of SPR */
 int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
+int nBootstrap = 1000;		/* If set, number of replicates of local bootstrap to do */
+
 /* Options */
 int verbose = 1;
 int showProgress = 1;
@@ -1705,7 +1707,6 @@ int FastTree(int argc, char **argv) {
   int nni = -1;			/* number of rounds of NNI, defaults to 4*log2(n) */
   int maxSPRLength = 10;	/* maximum distance to move a node */
   bool MLlen = false;		/* optimize branch lengths; no topology changes */
-  int nBootstrap = 1000;		/* If set, number of replicates of local bootstrap to do */
   char *logfile = NULL;
   bool bUseGtrRates = false;
   double gtrrates[6] = {1,1,1,1,1,1};
@@ -1826,8 +1827,7 @@ int FastTree(int argc, char **argv) {
     } else if (strcmp(argv[iArg],"-nni") == 0 && iArg < argc-1) {
       iArg++;
       nni = atoi(argv[iArg]);
-      if (nni == 0)
-	spr = 0;
+      if (nni == 0) spr = 0;
     } else if (strcmp(argv[iArg],"-spr") == 0 && iArg < argc-1) {
       iArg++;
       spr = atoi(argv[iArg]);

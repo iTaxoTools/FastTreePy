@@ -47,7 +47,7 @@ These are the changes to the original `FastTree-2.1.11.c` source:
 < #ifdef OPENMP
 ---
 > #ifdef USE_OPENMP
-816a848,856
+816a848,858
 > char *fileName = NULL;
 > bool bQuote = false;
 > bool bUseGtr = false;
@@ -57,29 +57,32 @@ These are the changes to the original `FastTree-2.1.11.c` source:
 > int nRateCats = 20;
 > int spr = 2;			/* number of rounds of SPR */
 > int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
-893d932
+> int nBootstrap = 1000;		/* If set, number of replicates of local bootstrap to do */
+>
+893d934
 < const int nDefaultRateCats = 20;
-1656c1695
+1656c1697
 < int main(int argc, char **argv) {
 ---
 > int FastTree(int argc, char **argv) {
-1667d1705
+1667d1707
 <   int spr = 2;			/* number of rounds of SPR */
-1669d1706
+1669d1708
 <   int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
-1672d1708
+1671,1672d1709
+<   int nBootstrap = 1000;		/* If set, number of replicates of local bootstrap to do */
 <   int nRateCats = nDefaultRateCats;
-1674,1676d1709
+1674,1676d1710
 <   bool bUseGtr = false;
 <   bool bUseLg = false;
 <   bool bUseWag = false;
-1681d1713
+1681d1714
 <   bool bQuote = false;
-1683c1715
+1683c1716
 <
 ---
 > #ifndef ismodule
-1693a1726,1733
+1693a1727,1734
 > #else
 >   if (argc == 1) {
 >     fprintf(stderr, "Usage for FastTree version %s %s%s:\n%s",
@@ -88,6 +91,11 @@ These are the changes to the original `FastTree-2.1.11.c` source:
 >   }
 > #endif
 >
+1789,1790c1830
+<       if (nni == 0)
+< 	spr = 0;
+---
+>       if (nni == 0) spr = 0;
 1932c1972
 <   char *fileName = iArg == (argc-1) ?  argv[argc-1] : NULL;
 ---

@@ -165,6 +165,7 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 	extern double tophitsRefresh;
 	extern int spr;
 	extern int MLnni;
+	extern int nBootstrap;
 	extern int mlAccuracy;
 	extern bool fastNNI;
 
@@ -248,6 +249,12 @@ fasttree_main(PyObject *self, PyObject *args, PyObject *kwargs) {
 
 		if (parseItem(dict, "mlnni", 'i', &MLnni)) return NULL;
 		fprintf(stderr, "- MLnni = %i\n", MLnni);
+
+		int support;
+		if (parseItem(dict, "support", 'b', &support)) return NULL;
+		if (support) nBootstrap = 1000;
+		else nBootstrap = 0;
+		fprintf(stderr, "- nBootstrap = %i\n", nBootstrap);
 
 		int exhaustive;
 		if (parseItem(dict, "exhaustive", 'b', &exhaustive)) return NULL;
