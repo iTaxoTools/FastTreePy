@@ -361,7 +361,7 @@ class Main(common.widgets.ToolDialog):
 
         self.setWindowTitle(self.title)
         self.setWindowIcon(QtGui.QIcon(get_resource('logos/fasttree.ico')))
-        self.resize(840, 540)
+        self.resize(860, 570)
 
         self.process = None
         self.machine = None
@@ -882,6 +882,7 @@ class Main(common.widgets.ToolDialog):
             return
         self.textLogger.clear()
         self.textLogger.append(f'> Now working on file: {fileName}\n\n')
+        self.textLogger.append('# You may hover parameters for tips.\n\n')
         self.postAction(Action.Open, file=fileName)
         self.file = fileName
 

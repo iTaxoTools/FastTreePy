@@ -1,7 +1,12 @@
 
-"""Console entry point"""
+"""API and console entry-point"""
+
+__all__ = ['PhylogenyApproximation', 'quick']
+
 
 import sys
+
+from .core import PhylogenyApproximation, quick
 
 
 def main():

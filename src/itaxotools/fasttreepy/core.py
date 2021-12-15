@@ -90,11 +90,9 @@ def quick(input=None, save=None, args=[]):
     a = PhylogenyApproximation(input)
     a.args = args
     a.launch()
-    if save is not None:
-        savefile = open(save, 'w')
-    else:
-        savefile = sys.stdout
     with open(a.fetch()) as result:
-        print(result.read(), file=savefile)
-    if save is not None:
-        savefile.close()
+        if save is not None:
+            with open(save, 'w') as savefile:
+                print(result.read(), file=savefile)
+        else:
+            print(result.read())

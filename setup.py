@@ -17,7 +17,6 @@ class build_ext(_build_ext):
 
 class FastTreeExtension(Extension):
     """Extension subclass that defines build_init"""
-    pass
     def build_init(self, build):
         """Called by build_ext to link openmp"""
         if build.compiler.compiler_type == 'msvc':

@@ -1,3 +1,193 @@
-These are the changes to the original `FastTree.c` source:
+These are the changes to the original `FastTree-2.1.11.c` source:
 
-...
+295d294
+< #include <sys/time.h>
+297d295
+< #include <unistd.h>
+303,304c301,335
+< /* Compile with -DOPENMP to turn on multithreading */
+< #ifdef OPENMP
+---
+> /* High-level python output */
+> #ifdef ismodule
+> #include <Python.h>
+> #include "wrapio.h"
+> #endif
+>
+> #ifdef _WIN32
+> #include <Windows.h>
+> #include <stdint.h>
+>
+> int gettimeofday(struct timeval* t, char* timezone) {
+>
+>   static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+>
+>   SYSTEMTIME  system_time;
+>   FILETIME    file_time;
+>   uint64_t    time;
+>
+>   GetSystemTime( &system_time );
+>   SystemTimeToFileTime( &system_time, &file_time );
+>   time =  ((uint64_t)file_time.dwLowDateTime )      ;
+>   time += ((uint64_t)file_time.dwHighDateTime) << 32;
+>
+>   t->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+>   t->tv_usec = (long) (system_time.wMilliseconds * 1000);
+>   return 0;
+> }
+>
+> #else
+> #include <sys/time.h>
+> #include <unistd.h>
+> #endif
+>
+> /* Compile with -DUSE_OPENMP to turn on multithreading */
+> #ifdef USE_OPENMP
+810c841
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+816a848,856
+> char *fileName = NULL;
+> bool bQuote = false;
+> bool bUseGtr = false;
+> bool bUseLg = false;
+> bool bUseWag = false;
+> int nDefaultRateCats = 20;
+> int nRateCats = 20;
+> int spr = 2;			/* number of rounds of SPR */
+> int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
+893d932
+< const int nDefaultRateCats = 20;
+1656c1695
+< int main(int argc, char **argv) {
+---
+> int FastTree(int argc, char **argv) {
+1667d1705
+<   int spr = 2;			/* number of rounds of SPR */
+1669d1706
+<   int MLnni = -1;		/* number of rounds of ML NNI, defaults to 2*log2(n) */
+1672d1708
+<   int nRateCats = nDefaultRateCats;
+1674,1676d1709
+<   bool bUseGtr = false;
+<   bool bUseLg = false;
+<   bool bUseWag = false;
+1681d1713
+<   bool bQuote = false;
+1683c1715
+<
+---
+> #ifndef ismodule
+1693a1726,1733
+> #else
+>   if (argc == 1) {
+>     fprintf(stderr, "Usage for FastTree version %s %s%s:\n%s",
+>       FT_VERSION, SSE_STRING, OpenMPString(), usage);
+>     exit(0);
+>   }
+> #endif
+>
+1932c1972
+<   char *fileName = iArg == (argc-1) ?  argv[argc-1] : NULL;
+---
+>   fileName = iArg == (argc-1) ?  argv[argc-1] : NULL;
+2522c2562
+<   exit(0);
+---
+>   return 0;
+2546c2586
+<     if (verbose > 1 || !isatty(STDERR_FILENO)) {
+---
+>     if (verbose > 1 || !isatty(fileno(stderr))) {
+4622c4662
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+5646c5686
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+5653c5693
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+5658c5698
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+5670c5710
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+5689c5729
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7173c7213
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7178c7218
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7188c7228
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7197c7237
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7658c7698
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7679c7719
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7749c7789
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+7755c7795
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8068c8108
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8238c8278
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8268c8308
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8660c8700
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8680c8720
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8750c8790
+< #ifdef OPENMP
+---
+> #ifdef USE_OPENMP
+8755c8795
+<   return("");
+---
+>   return(", OpenMP OFF");
+10304a10345,10350
+>
+> #ifndef ismodule
+> int main(int argc, char **argv) {
+>   return FastTree(argc, argv);
+> }
+> #endif
