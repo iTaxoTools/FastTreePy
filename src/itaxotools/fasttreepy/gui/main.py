@@ -139,6 +139,19 @@ class ModelListWidget(ListWidget):
             self.dataChanged.emit(self._index, v)
 
 
+class CustomView(View):
+    """Param view with custom widgets"""
+
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.addCustomParamWidget(
+            model.rootItem.sequence.ncodes, RadioWidget)
+        self.addCustomParamWidget(
+            model.rootItem.model.ml_model, ModelListWidget)
+
+
 class TextEditLogger(common.widgets.TextEditLogger):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -702,13 +715,7 @@ class Main(common.widgets.ToolDialog):
 
         self.paramModel = Model(self.analysis.param)
         self.paramModel.dataChanged.connect(self.handleDataChanged)
-        self.paramView = View(self.paramModel)
-        self.paramView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.paramView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.paramView.addCustomParamWidget(
-            self.analysis.param.sequence.ncodes, RadioWidget)
-        self.paramView.addCustomParamWidget(
-            self.analysis.param.model.ml_model, ModelListWidget)
+        self.paramView = CustomView(self.paramModel)
 
         self.pane['params'] = common.widgets.Panel(self)
         self.pane['params'].title = 'Parameters'
