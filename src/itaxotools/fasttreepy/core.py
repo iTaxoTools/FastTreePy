@@ -44,7 +44,7 @@ class PhylogenyApproximation():
         self.target = None
         self.results = None
         self.log = None
-        self.param = params.params
+        self.param = params.params()
         self.args = []
 
     def run(self):
