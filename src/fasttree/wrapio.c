@@ -293,7 +293,6 @@ int wrapio_init ( PyObject *m ) {
 except:
  done = -1;
 finally:
- Py_XDECREF(dict);
  Py_XDECREF(sys);
  return done;
 }
