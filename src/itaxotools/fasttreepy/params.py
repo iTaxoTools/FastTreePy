@@ -72,6 +72,14 @@ def params():
         Group(key='topology',
               label='Topology Refinement',
               children=[
+            Field(key='support',
+                  label='Compute SH-like local node support',
+                  doc=("The local support values are given as names\n"
+                       "for the internal nodes, and range from 0 to 1.\n"
+                       "The Shimodaira Hasegawa test is used by default,\n"
+                       "or minimum-evolution bootstrap if ML-NNI = 0."),
+                  type=bool,
+                  default=True),
             Field(key='spr',
                   label='SPR rounds',
                   doc=("Number of Subtree-Prune-Regraft rounds\n"
@@ -87,14 +95,6 @@ def params():
                        "both min-evo NNIs and SPRs."),
                   type=int,
                   default=-1),
-            Field(key='support',
-                  label='Compute local support',
-                  doc=("The local support values are given as names\n"
-                       "for the internal nodes, and range from 0 to 1.\n"
-                       "The Shimodaira Hasegawa test is used by default,\n"
-                       "or minimum-evolution bootstrap if ML-NNI = 0."),
-                  type=bool,
-                  default=True),
             Field(key='exhaustive',
                   label='Exhaustive NNIs',
                   doc=("Turn off heuristics to avoid constant subtrees\n"
