@@ -69,7 +69,7 @@ setup(
     ext_modules=[fasttree_module],
     python_requires='>=3.8.6, <4',
     install_requires=[
-        'pyside6>=6.1.1, <6.2.0',
+        'pyside6>=6.1.1',
         'itaxotools-common==0.2.2',
         ],
     extras_require={
@@ -89,6 +89,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3 :: Only',
     ],
     include_package_data=True,
