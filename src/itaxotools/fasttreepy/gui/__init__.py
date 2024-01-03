@@ -23,6 +23,5 @@ def main():
     app.setStyle('Fusion')
     main = Main(init=init)
     main.setWindowFlags(QtCore.Qt.Window)
-    main.setModal(True)
     main.show()
     sys.exit(app.exec_())
