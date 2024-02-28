@@ -55,6 +55,17 @@ with path.open() as file:
 
 See `itaxotools.fasttreepy.params.params` for all available options.
 
+### Installing on macOS
+
+FastTree depends on OpenMP, which is not available by default on macOS:
+
+- Install homebrew and run `brew install llvm`
+- In `setup.py`, class `FastTreeExtension`, change "gomp" to "omp"
+- Download OpenMP from r-project: https://mac.r-project.org/openmp/
+- Place the binaries and includes in ~/.local
+- Run `source scripts/mac/env.sh`
+- Install using pip
+
 ### Packaging
 
 It's recommended to use PyInstaller from within a virtual environment:
