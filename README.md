@@ -4,13 +4,11 @@ Infer approximately-maximum-likelihood phylogenetic trees.<br>
 This is a Python wrapper for [FastTree](http://www.microbesonline.org/fasttree/).
 
 ### Installation
-Clone and install the latest version (requires Python 3.8 or later):
+Install using pip:
 ```
-git clone https://github.com/iTaxoTools/FastTreePy.git
-cd FastTreePy
-pip install . -f packages.html
+pip install git+https://github.com/iTaxoTools/FastTreePy.git
 ```
-*You will need a C compiler when building from source.*
+*You will need a C++ compiler when building from source.*
 
 ### Executables
 Download and run the standalone executables without installing Python.</br>
@@ -70,6 +68,8 @@ FastTree depends on OpenMP, which is not available by default on macOS:
 
 It's recommended to use PyInstaller from within a virtual environment:
 ```
-pip install ".[dev]" -f packages.html
+git clone https://github.com/iTaxoTools/FastTreePy.git
+cd FastTreePy
+pip install ".[dev]"
 pyinstaller scripts/fasttreepy.spec
 ```
